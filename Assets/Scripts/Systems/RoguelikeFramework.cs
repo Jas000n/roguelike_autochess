@@ -3,14 +3,28 @@ using UnityEngine;
 
 public class RoguelikeFramework : MonoBehaviour
 {
+    private Material CreateRuntimeMaterial(Texture2D tex, Color color)
+    {
+        Shader s = Shader.Find("Universal Render Pipeline/Unlit");
+        if (s == null) s = Shader.Find("Unlit/Texture");
+        if (s == null) s = Shader.Find("Sprites/Default");
+        if (s == null) s = Shader.Find("Standard");
+
+        var m = new Material(s);
+        m.color = color;
+        if (tex != null) m.mainTexture = tex;
+        return m;
+    }
+
     private enum RunState { Map, Battle, Reward }
     private RunState state = RunState.Map;
 
     private int floor = 1;
     private bool battleStarted;
     private float turnTimer;
-    private readonly float turnInterval = 0.55f;
+    private readonly float baseTurnInterval = 0.55f;
     private int turnIndex;
+    private int speedLevel = 1; // 1x / 2x / 4x
     private string battleLog = "点击【进入第一关】开始对战";
 
     private readonly List<Unit> playerUnits = new();
@@ -35,6 +49,7 @@ public class RoguelikeFramework : MonoBehaviour
         public int hp;
         public int atk;
         public int spd;
+        public int range = 1; // 近战=1，远程>1
         public int x;
         public int y;
         public bool player;
@@ -74,8 +89,7 @@ public class RoguelikeFramework : MonoBehaviour
         bg.transform.position = new Vector3(0, 0, 1.2f);
         bg.transform.localScale = new Vector3(16f, 10f, 1f);
         var r = bg.GetComponent<Renderer>();
-        r.material.color = new Color(0.12f, 0.1f, 0.14f);
-        if (bgTex != null) r.material.mainTexture = bgTex;
+        r.material = CreateRuntimeMaterial(bgTex, new Color(0.12f, 0.1f, 0.14f));
     }
 
     private void SetupCamera()
@@ -97,6 +111,7 @@ public class RoguelikeFramework : MonoBehaviour
     {
         if (state != RunState.Battle || !battleStarted) return;
 
+        float turnInterval = baseTurnInterval / speedLevel;
         turnTimer += Time.deltaTime;
         if (turnTimer < turnInterval) return;
         turnTimer = 0;
@@ -118,13 +133,13 @@ public class RoguelikeFramework : MonoBehaviour
         ClearViews();
         DrawBoard();
 
-        playerUnits.Add(new Unit { name = "帅-圣", hp = 36, atk = 9, spd = 7, x = 0, y = 2, player = true });
-        playerUnits.Add(new Unit { name = "马-梦", hp = 24, atk = 10, spd = 10, x = 0, y = 1, player = true });
-        playerUnits.Add(new Unit { name = "炮-火", hp = 22, atk = 11, spd = 8, x = 0, y = 3, player = true });
+        playerUnits.Add(new Unit { name = "帅-圣", hp = 36, atk = 9, spd = 7, range = 1, x = 0, y = 2, player = true });
+        playerUnits.Add(new Unit { name = "马-梦", hp = 24, atk = 10, spd = 10, range = 1, x = 0, y = 1, player = true });
+        playerUnits.Add(new Unit { name = "炮-火", hp = 22, atk = 11, spd = 8, range = 3, x = 0, y = 3, player = true });
 
-        enemyUnits.Add(new Unit { name = "炎魔帅", hp = 34, atk = 9, spd = 7, x = 7, y = 2, player = false });
-        enemyUnits.Add(new Unit { name = "雷鸣车", hp = 28, atk = 8, spd = 8, x = 7, y = 1, player = false });
-        enemyUnits.Add(new Unit { name = "卒", hp = 20, atk = 7, spd = 9, x = 7, y = 3, player = false });
+        enemyUnits.Add(new Unit { name = "炎魔帅", hp = 34, atk = 9, spd = 7, range = 1, x = 7, y = 2, player = false });
+        enemyUnits.Add(new Unit { name = "雷鸣车", hp = 28, atk = 8, spd = 8, range = 1, x = 7, y = 1, player = false });
+        enemyUnits.Add(new Unit { name = "卒", hp = 20, atk = 7, spd = 9, range = 1, x = 7, y = 3, player = false });
 
         CreateViews(playerUnits, new Color(0.2f, 0.7f, 1f));
         CreateViews(enemyUnits, new Color(0.95f, 0.35f, 0.4f));
@@ -147,10 +162,19 @@ public class RoguelikeFramework : MonoBehaviour
         if (target == null) return;
 
         int dist = Mathf.Abs(actor.x - target.x) + Mathf.Abs(actor.y - target.y);
-        if (dist <= 1)
+        if (dist <= actor.range)
         {
             target.hp -= actor.atk;
-            battleLog = $"{actor.name} 攻击 {target.name} -{actor.atk}";
+            if (actor.range > 1)
+            {
+                SpawnProjectile(actor, target, new Color(1f, 0.75f, 0.2f));
+                battleLog = $"{actor.name} 远程攻击 {target.name} -{actor.atk}";
+            }
+            else
+            {
+                SpawnHitFlash(target, new Color(1f, 0.2f, 0.2f));
+                battleLog = $"{actor.name} 近战攻击 {target.name} -{actor.atk}";
+            }
         }
         else
         {
@@ -227,9 +251,9 @@ public class RoguelikeFramework : MonoBehaviour
                 q.transform.localScale = new Vector3(0.95f, 0.95f, 1);
                 var r = q.GetComponent<Renderer>();
                 bool dark = (x + y) % 2 == 0;
-                r.material.color = dark ? new Color(0.18f, 0.18f, 0.24f) : new Color(0.24f, 0.24f, 0.3f);
-                if (dark && tileATex != null) r.material.mainTexture = tileATex;
-                if (!dark && tileBTex != null) r.material.mainTexture = tileBTex;
+                var c = dark ? new Color(0.18f, 0.18f, 0.24f) : new Color(0.24f, 0.24f, 0.3f);
+                var t = dark ? tileATex : tileBTex;
+                r.material = CreateRuntimeMaterial(t, c);
             }
         }
     }
@@ -243,9 +267,8 @@ public class RoguelikeFramework : MonoBehaviour
             go.transform.position = GridToWorld(u.x, u.y);
             go.transform.localScale = new Vector3(0.8f, 0.8f, 1);
             var r = go.GetComponent<Renderer>();
-            r.material.color = c;
             var icon = PickIcon(u.name);
-            if (icon != null) r.material.mainTexture = icon;
+            r.material = CreateRuntimeMaterial(icon, c);
 
             var t = new GameObject("Label");
             t.transform.position = go.transform.position + new Vector3(0, 0.58f, 0);
@@ -305,6 +328,58 @@ public class RoguelikeFramework : MonoBehaviour
         return shieldIcon;
     }
 
+    private void SpawnProjectile(Unit from, Unit to, Color color)
+    {
+        var p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        p.name = "FX_Projectile";
+        p.transform.localScale = Vector3.one * 0.18f;
+        p.transform.position = GridToWorld(from.x, from.y) + new Vector3(0, 0, -0.2f);
+        var r = p.GetComponent<Renderer>();
+        r.material = CreateRuntimeMaterial(null, color);
+        StartCoroutine(MoveFx(p, GridToWorld(to.x, to.y) + new Vector3(0, 0, -0.2f), 0.14f, true));
+    }
+
+    private void SpawnHitFlash(Unit target, Color color)
+    {
+        var fx = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        fx.name = "FX_Hit";
+        fx.transform.position = GridToWorld(target.x, target.y) + new Vector3(0, 0, -0.25f);
+        fx.transform.localScale = Vector3.one * 0.6f;
+        var r = fx.GetComponent<Renderer>();
+        r.material = CreateRuntimeMaterial(null, color);
+        StartCoroutine(DestroyFx(fx, 0.1f));
+    }
+
+    private System.Collections.IEnumerator MoveFx(GameObject go, Vector3 end, float t, bool burstAtEnd)
+    {
+        Vector3 start = go.transform.position;
+        float e = 0f;
+        while (e < t)
+        {
+            e += Time.deltaTime;
+            float k = Mathf.Clamp01(e / t);
+            go.transform.position = Vector3.Lerp(start, end, k);
+            yield return null;
+        }
+        if (burstAtEnd)
+        {
+            var burst = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            burst.name = "FX_Burst";
+            burst.transform.position = end;
+            burst.transform.localScale = Vector3.one * 0.45f;
+            var r = burst.GetComponent<Renderer>();
+            r.material = CreateRuntimeMaterial(null, new Color(1f, 0.35f, 0.2f));
+            StartCoroutine(DestroyFx(burst, 0.08f));
+        }
+        Destroy(go);
+    }
+
+    private System.Collections.IEnumerator DestroyFx(GameObject go, float t)
+    {
+        yield return new WaitForSeconds(t);
+        if (go) Destroy(go);
+    }
+
     private Vector3 GridToWorld(int x, int y)
     {
         return new Vector3(-3.5f + x, -2f + y, 0);
@@ -325,7 +400,13 @@ public class RoguelikeFramework : MonoBehaviour
 
         if (state == RunState.Battle)
         {
-            GUI.Box(new Rect(16, 110, 300, 70), "战斗中：自动回合对打");
+            GUI.Box(new Rect(16, 110, 360, 90), $"战斗中：自动回合对打\n战斗速度：{speedLevel}x");
+            if (GUI.Button(new Rect(30, 170, 120, 24), "切换加速"))
+            {
+                if (speedLevel == 1) speedLevel = 2;
+                else if (speedLevel == 2) speedLevel = 4;
+                else speedLevel = 1;
+            }
         }
 
         if (state == RunState.Reward)
