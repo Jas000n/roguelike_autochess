@@ -26,6 +26,7 @@ public class RoguelikeFramework : MonoBehaviour
     private int turnIndex;
     private int speedLevel = 4; // 1x / 2x / 4x，默认4x
     private string battleLog = "点击【进入第一关】开始对战";
+    private Unit inspectedUnit;
 
     private readonly List<Unit> playerUnits = new();
     private readonly List<Unit> enemyUnits = new();
@@ -65,8 +66,10 @@ public class RoguelikeFramework : MonoBehaviour
 
     private class Unit
     {
+        public string id;
         public string name;
         public int hp;
+        public int maxHp;
         public int atk;
         public int spd;
         public int range = 1; // 近战=1，远程>1
@@ -74,6 +77,11 @@ public class RoguelikeFramework : MonoBehaviour
         public int x;
         public int y;
         public bool player;
+
+        // 战斗统计（单场）
+        public int damageDealt;
+        public int damageTaken;
+
         public bool Alive => hp > 0;
     }
 
@@ -92,7 +100,7 @@ public class RoguelikeFramework : MonoBehaviour
 
     private Unit CreateBaseUnit(string n, bool player)
     {
-        var u = new Unit { name = n, player = player };
+        var u = new Unit { id = System.Guid.NewGuid().ToString("N").Substring(0, 8), name = n, player = player };
         switch (n)
         {
             case "帅": u.hp = 40; u.atk = 8; u.spd = 6; u.range = 1; break;
@@ -103,12 +111,28 @@ public class RoguelikeFramework : MonoBehaviour
             case "士": u.hp = 26; u.atk = 8; u.spd = 9; u.range = 1; break;
             default: u.hp = 22; u.atk = 7; u.spd = 8; u.range = 1; break;
         }
+        u.maxHp = u.hp;
         return u;
     }
 
     private Unit CloneUnit(Unit src)
     {
-        return new Unit { name = src.name, hp = src.hp, atk = src.atk, spd = src.spd, range = src.range, star = src.star, player = src.player, x = src.x, y = src.y };
+        return new Unit
+        {
+            id = src.id,
+            name = src.name,
+            hp = src.hp,
+            maxHp = src.maxHp,
+            atk = src.atk,
+            spd = src.spd,
+            range = src.range,
+            star = src.star,
+            player = src.player,
+            x = src.x,
+            y = src.y,
+            damageDealt = 0,
+            damageTaken = 0
+        };
     }
 
     private void UpgradeUnit(Unit u)
@@ -116,6 +140,7 @@ public class RoguelikeFramework : MonoBehaviour
         u.star++;
         // 2星成长加强
         u.hp = Mathf.RoundToInt(u.hp * 1.8f);
+        u.maxHp = u.hp;
         u.atk = Mathf.RoundToInt(u.atk * 1.6f);
         u.spd += 2;
     }
@@ -211,7 +236,8 @@ public class RoguelikeFramework : MonoBehaviour
     {
         public Unit unit;
         public GameObject go;
-        public TextMesh text;
+        public GameObject hpBg;
+        public GameObject hpFill;
     }
 
     private void Start()
@@ -261,6 +287,7 @@ public class RoguelikeFramework : MonoBehaviour
     private void Update()
     {
         HandleMouseDrag();
+        HandleUnitInspectClick();
 
         if (state != RunState.Battle || !battleStarted) return;
 
@@ -462,11 +489,35 @@ public class RoguelikeFramework : MonoBehaviour
         }
     }
 
+    private void HandleUnitInspectClick()
+    {
+        if ((state != RunState.Battle && state != RunState.Prepare) || !Input.GetMouseButtonDown(0)) return;
+
+        if (isDragging) return;
+
+        var cam = Camera.main;
+        if (cam == null) return;
+
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
+
+        foreach (var v in views)
+        {
+            if (v.go == hit.collider.gameObject)
+            {
+                inspectedUnit = v.unit;
+                battleLog = $"查看 {v.unit.name}{v.unit.star}★ 属性";
+                return;
+            }
+        }
+    }
+
     private void StartFirstBattle()
     {
         state = RunState.Battle;
         battleStarted = true;
         turnIndex = 0;
+        inspectedUnit = null;
         battleLog = "战斗开始";
 
         playerUnits.Clear();
@@ -512,6 +563,7 @@ public class RoguelikeFramework : MonoBehaviour
             float atkScale = 1f + (floor - 1) * 0.15f;
             int spdBonus = Mathf.FloorToInt((floor - 1) * 0.4f);
             u.hp = Mathf.RoundToInt(u.hp * hpScale);
+            u.maxHp = u.hp;
             u.atk = Mathf.RoundToInt(u.atk * atkScale);
             u.spd += spdBonus;
 
@@ -530,6 +582,7 @@ public class RoguelikeFramework : MonoBehaviour
 
         CreateViews(playerUnits, new Color(0.2f, 0.7f, 1f));
         CreateViews(enemyUnits, new Color(0.95f, 0.35f, 0.4f));
+        RefreshViews();
     }
 
     private void RunOneTurn()
@@ -629,6 +682,8 @@ public class RoguelikeFramework : MonoBehaviour
         if (to.name.Contains("帅")) dmg = Mathf.Max(1, Mathf.RoundToInt(dmg * 0.85f));
 
         to.hp -= dmg;
+        from.damageDealt += dmg;
+        to.damageTaken += dmg;
         return dmg;
     }
 
@@ -731,17 +786,17 @@ public class RoguelikeFramework : MonoBehaviour
             var icon = PickIcon(u.name);
             r.material = CreateRuntimeMaterial(icon, c);
 
-            var t = new GameObject("Label");
-            t.transform.position = go.transform.position + new Vector3(0, 0.58f, 0);
-            var tm = t.AddComponent<TextMesh>();
-            tm.anchor = TextAnchor.MiddleCenter;
-            tm.alignment = TextAlignment.Center;
-            tm.characterSize = 0.12f;
-            tm.fontSize = 36;
-            tm.color = Color.white;
-            tm.text = $"{u.name}{u.star}★\nHP:{u.hp}";
+            var hpBg = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            hpBg.name = "HPBarBg";
+            hpBg.transform.localScale = new Vector3(0.8f, 0.1f, 1f);
+            hpBg.GetComponent<Renderer>().material = CreateRuntimeMaterial(null, new Color(0f, 0f, 0f, 0.7f));
 
-            views.Add(new UnitView { unit = u, go = go, text = tm });
+            var hpFill = GameObject.CreatePrimitive(PrimitiveType.Quad);
+            hpFill.name = "HPBarFill";
+            hpFill.transform.localScale = new Vector3(0.78f, 0.07f, 1f);
+            hpFill.GetComponent<Renderer>().material = CreateRuntimeMaterial(null, u.player ? new Color(0.2f, 0.95f, 0.35f) : new Color(0.95f, 0.2f, 0.2f));
+
+            views.Add(new UnitView { unit = u, go = go, hpBg = hpBg, hpFill = hpFill });
         }
     }
 
@@ -752,15 +807,29 @@ public class RoguelikeFramework : MonoBehaviour
             if (v.unit.Alive)
             {
                 v.go.SetActive(true);
-                v.text.gameObject.SetActive(true);
+                if (v.hpBg) v.hpBg.SetActive(true);
+                if (v.hpFill) v.hpFill.SetActive(true);
+
                 v.go.transform.position = GridToWorld(v.unit.x, v.unit.y);
-                v.text.transform.position = v.go.transform.position + new Vector3(0, 0.58f, 0);
-                v.text.text = $"{v.unit.name}{v.unit.star}★\nHP:{Mathf.Max(0, v.unit.hp)}";
+
+                var barCenter = v.go.transform.position + new Vector3(0f, 0.56f, -0.05f);
+                if (v.hpBg) v.hpBg.transform.position = barCenter;
+
+                float hpRatio = v.unit.maxHp > 0 ? Mathf.Clamp01((float)v.unit.hp / v.unit.maxHp) : 0f;
+                float fullWidth = 0.78f;
+                if (v.hpFill)
+                {
+                    v.hpFill.transform.localScale = new Vector3(fullWidth * hpRatio, 0.07f, 1f);
+                    float left = barCenter.x - fullWidth / 2f;
+                    float fillX = left + (fullWidth * hpRatio) / 2f;
+                    v.hpFill.transform.position = new Vector3(fillX, barCenter.y, -0.06f);
+                }
             }
             else
             {
                 v.go.SetActive(false);
-                v.text.gameObject.SetActive(false);
+                if (v.hpBg) v.hpBg.SetActive(false);
+                if (v.hpFill) v.hpFill.SetActive(false);
             }
         }
     }
@@ -770,7 +839,8 @@ public class RoguelikeFramework : MonoBehaviour
         foreach (var v in views)
         {
             if (v.go) Destroy(v.go);
-            if (v.text) Destroy(v.text.gameObject);
+            if (v.hpBg) Destroy(v.hpBg);
+            if (v.hpFill) Destroy(v.hpFill);
         }
         views.Clear();
 
@@ -846,9 +916,84 @@ public class RoguelikeFramework : MonoBehaviour
         return new Vector3(-4.5f + x, -2.5f + y, 0);
     }
 
+    private void DrawInspectPanel(float x, float y, float w, float h)
+    {
+        string txt = "单击棋子查看属性";
+        if (inspectedUnit != null)
+        {
+            txt =
+                $"{inspectedUnit.name}{inspectedUnit.star}★ ({(inspectedUnit.player ? "我方" : "敌方")})\n" +
+                $"HP: {Mathf.Max(0, inspectedUnit.hp)}/{inspectedUnit.maxHp}\n" +
+                $"ATK: {inspectedUnit.atk}  SPD: {inspectedUnit.spd}  Range: {inspectedUnit.range}\n" +
+                $"本场输出: {inspectedUnit.damageDealt}  本场承伤: {inspectedUnit.damageTaken}";
+        }
+        GUI.Box(new Rect(x, y, w, h), txt);
+    }
+
+    private void DrawBattleStats(float x, float y, float w, float h)
+    {
+        GUI.Box(new Rect(x, y, w, h), "战斗统计（本场）  -  柱状图");
+
+        var all = new List<Unit>();
+        all.AddRange(playerUnits);
+        all.AddRange(enemyUnits);
+
+        int maxVal = 1;
+        foreach (var u in all)
+        {
+            if (u.damageDealt > maxVal) maxVal = u.damageDealt;
+            if (u.damageTaken > maxVal) maxVal = u.damageTaken;
+        }
+
+        GUI.Label(new Rect(x + 10, y + 20, w - 20, 18), "左蓝=造成伤害  右橙=承受伤害（仿金铲铲风格）");
+
+        float barMax = w - 150f;
+        float rowH = 18f;
+        float gap = 4f;
+
+        void DrawTeam(string title, List<Unit> team, float startY)
+        {
+            GUI.Label(new Rect(x + 10, startY, w - 20, 18), title);
+            float ry = startY + 18f;
+            foreach (var u in team)
+            {
+                GUI.Label(new Rect(x + 10, ry, 70, rowH), $"{u.name}{u.star}★");
+
+                float dealtW = barMax * (u.damageDealt / (float)maxVal);
+                float takenW = barMax * (u.damageTaken / (float)maxVal);
+
+                var dealtRect = new Rect(x + 82, ry + 2, dealtW, rowH - 4);
+                var takenRect = new Rect(x + 82, ry + 2 + (rowH - 4) * 0.52f, takenW, (rowH - 4) * 0.48f);
+
+                Color old = GUI.color;
+                GUI.color = new Color(0.25f, 0.72f, 1f, 0.95f);
+                GUI.DrawTexture(dealtRect, Texture2D.whiteTexture);
+                GUI.color = new Color(1f, 0.62f, 0.2f, 0.95f);
+                GUI.DrawTexture(takenRect, Texture2D.whiteTexture);
+                GUI.color = old;
+
+                GUI.Label(new Rect(x + 90 + barMax, ry, 64, rowH), $"{u.damageDealt}/{u.damageTaken}");
+                ry += rowH + gap;
+            }
+        }
+
+        float topY = y + 40f;
+        DrawTeam("我方", playerUnits, topY);
+        float enemyStart = topY + (playerUnits.Count + 1) * (rowH + gap) + 8f;
+        DrawTeam("敌方", enemyUnits, enemyStart);
+    }
+
     private void OnGUI()
     {
         GUI.Box(new Rect(16, 12, 520, 95), $"龙棋传说（小丑牌式框架）\n第{floor}关 | 当前阶段：7兵种基础版（无变体）\n{battleLog}");
+
+        if (GUI.Button(new Rect(548, 20, 130, 32), "作弊 +999金币"))
+        {
+            gold += 999;
+            battleLog = "作弊生效：金币 +999";
+        }
+
+        DrawInspectPanel(548, 58, 360, 92);
 
         if (state == RunState.Map)
         {
@@ -895,6 +1040,8 @@ public class RoguelikeFramework : MonoBehaviour
                         if (GUI.Button(new Rect(gx, gy, cellW - 4, cellH - 4), $"{placed.name}\n{placed.star}★"))
                         {
                             selectedDeploy = placedIdx;
+                            inspectedUnit = placed;
+                            battleLog = $"查看 {placed.name}{placed.star}★ 属性";
                         }
                     }
                     else
@@ -926,7 +1073,12 @@ public class RoguelikeFramework : MonoBehaviour
                 if (i < benchUnits.Count)
                 {
                     var u = benchUnits[i];
-                    if (GUI.Button(new Rect(bx, panelY + 88, 65, 45), $"{u.name}\n{u.star}★")) selectedBench = i;
+                    if (GUI.Button(new Rect(bx, panelY + 88, 65, 45), $"{u.name}\n{u.star}★"))
+                    {
+                        selectedBench = i;
+                        inspectedUnit = u;
+                        battleLog = $"查看 {u.name}{u.star}★ 属性";
+                    }
                 }
                 else
                 {
@@ -951,6 +1103,8 @@ public class RoguelikeFramework : MonoBehaviour
                 else if (speedLevel == 2) speedLevel = 4;
                 else speedLevel = 1;
             }
+
+            DrawBattleStats(548, 160, 360, 280);
         }
 
         if (state == RunState.Reward)
@@ -963,6 +1117,8 @@ public class RoguelikeFramework : MonoBehaviour
                 ClearViews();
                 battleLog = "已完成第一关";
             }
+
+            DrawBattleStats(548, 160, 360, 280);
         }
     }
 }
