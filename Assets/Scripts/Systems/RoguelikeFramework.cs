@@ -114,6 +114,8 @@ public class RoguelikeFramework : MonoBehaviour
     private int speedLevel = 4;
     private string battleLog = "v0.1 -> v0.2~0.3 进行中";
     private Unit inspectedUnit;
+    private bool showBattleStats = true;
+    private string selectedSynergyKey = "";
 
     private readonly List<string> shopOffers = new();
 
@@ -339,7 +341,7 @@ public class RoguelikeFramework : MonoBehaviour
 
     private void SpawnEnemiesForStage(StageNode st)
     {
-        int enemyCount = Mathf.Clamp(3 + st.power, 3, 8);
+        int enemyCount = Mathf.Clamp(2 + st.power, 3, 7);
         int[,] pos = { { 7, 2 }, { 8, 1 }, { 8, 2 }, { 8, 3 }, { 9, 1 }, { 9, 2 }, { 9, 4 }, { 7, 4 } };
 
         for (int i = 0; i < enemyCount; i++)
@@ -347,8 +349,8 @@ public class RoguelikeFramework : MonoBehaviour
             string key = PickEnemyUnitKey(st);
             var u = CreateUnit(key, false);
 
-            float hpScale = 1f + (st.power - 1) * 0.2f;
-            float atkScale = 1f + (st.power - 1) * 0.15f;
+            float hpScale = 1f + (st.power - 1) * 0.15f;
+            float atkScale = 1f + (st.power - 1) * 0.11f;
             u.hp = Mathf.RoundToInt(u.hp * hpScale);
             u.maxHp = u.hp;
             u.atk = Mathf.RoundToInt(u.atk * atkScale);
@@ -659,6 +661,50 @@ public class RoguelikeFramework : MonoBehaviour
         int c = 0;
         foreach (var u in team) if (u.Alive && u.ClassTag == classTag) c++;
         return c;
+    }
+
+    private string GetClassCn(string classTag)
+    {
+        return classTag switch
+        {
+            "Vanguard" => "钢铁先锋",
+            "Rider" => "机动骑兵",
+            "Artillery" => "火力炮阵",
+            "Leader" => "领袖",
+            "Guardian" => "守护者",
+            "Assassin" => "刺客",
+            "Soldier" => "士兵",
+            _ => classTag
+        };
+    }
+
+    private string GetSynergyEffectDesc(string classTag, int count)
+    {
+        return classTag switch
+        {
+            "Vanguard" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位减伤 +10% / +22%（海克斯可再叠加）",
+            "Rider" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位速度 +2 / +5，首击突进更强",
+            "Artillery" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位伤害 +12% / +22%，4层额外射程+1",
+            _ => $"{GetClassCn(classTag)}：当前{count}"
+        };
+    }
+
+    private string GetUnitsOfClassText(string classTag)
+    {
+        var names = new List<string>();
+        foreach (var kv in unitDefs)
+        {
+            if (kv.Value.classTag == classTag) names.Add(kv.Value.name);
+        }
+        return names.Count == 0 ? "暂无" : string.Join("、", names);
+    }
+
+    private string GetInspectSynergyText(Unit u, List<Unit> team)
+    {
+        int c = CountClass(team, u.ClassTag);
+        return $"可激活羁绊：{GetClassCn(u.ClassTag)}（当前上阵{c}）\n" +
+               $"效果：{GetSynergyEffectDesc(u.ClassTag, c)}\n" +
+               $"该羁绊棋子：{GetUnitsOfClassText(u.ClassTag)}";
     }
 
     private string GetSynergySummary(List<Unit> team)
@@ -1255,13 +1301,15 @@ public class RoguelikeFramework : MonoBehaviour
 
     private void DrawInspectPanel(float x, float y, float w, float h)
     {
-        string txt = "单击棋子查看属性";
+        string txt = "单击棋子查看属性与羁绊";
         if (inspectedUnit != null)
         {
+            var team = inspectedUnit.player ? (state == RunState.Battle ? playerUnits : deploySlots) : enemyUnits;
             txt =
                 $"{inspectedUnit.Name}{inspectedUnit.star}★ ({(inspectedUnit.player ? "我方" : "敌方")})\n" +
                 $"HP {Mathf.Max(0, inspectedUnit.hp)}/{inspectedUnit.maxHp}  ATK {inspectedUnit.atk}  SPD {inspectedUnit.spd}  RNG {inspectedUnit.range}\n" +
                 $"职业 {inspectedUnit.ClassTag} / 阵营 {inspectedUnit.OriginTag}\n" +
+                $"{GetInspectSynergyText(inspectedUnit, team)}\n" +
                 $"本场输出 {inspectedUnit.damageDealt}  本场承伤 {inspectedUnit.damageTaken}";
         }
         GUI.Box(new Rect(x, y, w, h), txt);
@@ -1328,6 +1376,31 @@ public class RoguelikeFramework : MonoBehaviour
         };
     }
 
+    private void DrawSynergyClickPanel(float x, float y, float w, float h, List<Unit> team)
+    {
+        GUI.Box(new Rect(x, y, w, h), "羁绊详情（点击查看效果）");
+
+        string[] classes = { "Vanguard", "Rider", "Artillery" };
+        float bx = x + 12;
+        for (int i = 0; i < classes.Length; i++)
+        {
+            int c = CountClass(team, classes[i]);
+            string label = $"{GetClassCn(classes[i])} ({c})";
+            if (GUI.Button(new Rect(bx + i * 155, y + 24, 145, 26), label))
+            {
+                selectedSynergyKey = classes[i];
+            }
+        }
+
+        if (!string.IsNullOrEmpty(selectedSynergyKey))
+        {
+            int c = CountClass(team, selectedSynergyKey);
+            string info = GetSynergyEffectDesc(selectedSynergyKey, c) + "\n" +
+                          $"包含棋子：{GetUnitsOfClassText(selectedSynergyKey)}";
+            GUI.Label(new Rect(x + 12, y + 56, w - 24, h - 62), info);
+        }
+    }
+
     private void OnGUI()
     {
         string topInfo = $"金币:{gold}  等级:{playerLevel}({exp}/{ExpNeed(playerLevel)})  上阵上限:{GetBoardCap()}  连胜:{winStreak} 连败:{loseStreak}";
@@ -1339,7 +1412,7 @@ public class RoguelikeFramework : MonoBehaviour
             battleLog = "作弊生效：金币 +999";
         }
 
-        DrawInspectPanel(784, 58, 420, 92);
+        DrawInspectPanel(784, 58, 420, 170);
 
         GUI.Box(new Rect(16, 110, 350, 95), "已选海克斯");
         string hexTxt = selectedHexes.Count == 0 ? "暂无" : string.Join(" | ", selectedHexes.ConvertAll(h => h.name));
@@ -1437,22 +1510,29 @@ public class RoguelikeFramework : MonoBehaviour
 
         if (state == RunState.Battle)
         {
-            GUI.Box(new Rect(16, 220, 360, 90), $"战斗中（自动）\n速度：{speedLevel}x | 我方羁绊：{GetSynergySummary(playerUnits)}");
+            GUI.Box(new Rect(16, 220, 500, 120), $"战斗中（自动）\n速度：{speedLevel}x | 我方羁绊：{GetSynergySummary(playerUnits)}");
             if (GUI.Button(new Rect(30, 280, 120, 24), "切换加速"))
             {
                 if (speedLevel == 1) speedLevel = 2;
                 else if (speedLevel == 2) speedLevel = 4;
                 else speedLevel = 1;
             }
+            if (GUI.Button(new Rect(160, 280, 140, 24), showBattleStats ? "隐藏战斗统计" : "显示战斗统计"))
+            {
+                showBattleStats = !showBattleStats;
+            }
 
-            DrawBattleStats(548, 170, 660, 470);
+            DrawSynergyClickPanel(16, 346, 500, 120, playerUnits);
+
+            if (showBattleStats) DrawBattleStats(548, 170, 660, 470);
         }
 
         if (state == RunState.Reward)
         {
             GUI.Box(new Rect(16, 220, 420, 130), "结算\n可继续下一关（线性）\n关卡奖励与连胜经济已生效");
             if (GUI.Button(new Rect(30, 315, 140, 30), "继续")) NextAfterReward();
-            DrawBattleStats(548, 170, 660, 470);
+            if (GUI.Button(new Rect(180, 315, 140, 30), showBattleStats ? "隐藏战斗统计" : "显示战斗统计")) showBattleStats = !showBattleStats;
+            if (showBattleStats) DrawBattleStats(548, 170, 660, 470);
         }
 
         if (state == RunState.Hex)
