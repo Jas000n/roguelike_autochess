@@ -498,17 +498,31 @@ public class RoguelikeFramework : MonoBehaviour
             playerUnits.Add(u);
         }
 
-        // 敌方阵容随机生成
+        // 敌方阵容随机生成（随关卡成长）
         enemyUnits.Clear();
-        int enemyCount = Mathf.Min(3 + floor, 7); // 随回合数增加
-        var used = new HashSet<string>();
+        int enemyCount = Mathf.Min(3 + floor, 7); // 数量随关卡增加
+        int[,] pos = { { 7, 2 }, { 8, 1 }, { 8, 2 }, { 8, 3 }, { 9, 1 }, { 9, 2 }, { 9, 4 } };
         for (int i = 0; i < enemyCount; i++)
         {
-            string n;
-            do { n = baseNames[Random.Range(0, baseNames.Length)]; } while (used.Contains(n));
-            used.Add(n);
+            string n = baseNames[Random.Range(0, baseNames.Length)];
             var u = CreateBaseUnit(n, false);
-            int[,] pos = { { 7, 2 }, { 8, 1 }, { 8, 2 }, { 8, 3 }, { 9, 1 }, { 9, 2 }, { 9, 4 } };
+
+            // 线性成长：每关敌人都会更强
+            float hpScale = 1f + (floor - 1) * 0.22f;
+            float atkScale = 1f + (floor - 1) * 0.15f;
+            int spdBonus = Mathf.FloorToInt((floor - 1) * 0.4f);
+            u.hp = Mathf.RoundToInt(u.hp * hpScale);
+            u.atk = Mathf.RoundToInt(u.atk * atkScale);
+            u.spd += spdBonus;
+
+            // 从第3关开始有概率出现2星敌人
+            float star2Chance = Mathf.Clamp01((floor - 2) * 0.18f);
+            if (floor >= 3 && Random.value < star2Chance)
+            {
+                UpgradeUnit(u);
+                battleLog = "侦测到精英敌人（2星）";
+            }
+
             u.x = pos[i, 0];
             u.y = pos[i, 1];
             enemyUnits.Add(u);
