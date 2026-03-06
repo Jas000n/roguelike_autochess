@@ -116,6 +116,9 @@ public class RoguelikeFramework : MonoBehaviour
     private Unit inspectedUnit;
     private bool showBattleStats = true;
     private string selectedSynergyKey = "";
+    private bool showTooltip;
+    private string tooltipText = "";
+    private Vector2 tooltipPos;
 
     private readonly List<string> shopOffers = new();
 
@@ -268,6 +271,7 @@ public class RoguelikeFramework : MonoBehaviour
         state = RunState.Prepare;
         battleStarted = false;
         inspectedUnit = null;
+        showTooltip = false;
 
         int roundBaseGold = 5;
         int streakGold = winStreak >= 2 ? Mathf.Min(3, winStreak / 2) : (loseStreak >= 2 ? Mathf.Min(2, loseStreak / 2) : 0);
@@ -304,6 +308,7 @@ public class RoguelikeFramework : MonoBehaviour
         battleStartedTurn = 0;
         turnIndex = 0;
         inspectedUnit = null;
+        showTooltip = false;
         battleLog = $"战斗开始：第{st.floor}关 {st.type}";
 
         playerUnits.Clear();
@@ -818,12 +823,19 @@ public class RoguelikeFramework : MonoBehaviour
             int real = ApplyDamageWithTraits(actor, target, dmg);
             if (actorRange > 1)
             {
-                SpawnProjectile(actor, target, new Color(1f, 0.75f, 0.2f));
+                // 不同炮系弹道差异化
+                if (actor.def.key == "cannon_missile") SpawnProjectile(actor, target, new Color(1f, 0.35f, 0.2f), 0.24f, 0.12f);
+                else if (actor.def.key == "cannon_mortar") SpawnProjectile(actor, target, new Color(1f, 0.78f, 0.28f), 0.20f, 0.2f);
+                else if (actor.def.key == "cannon_burst") SpawnProjectile(actor, target, new Color(1f, 0.25f, 0.25f), 0.14f, 0.08f);
+                else SpawnProjectile(actor, target, new Color(1f, 0.75f, 0.2f));
+
                 battleLog = $"{actor.Name} 攻击 {target.Name} -{real}";
             }
             else
             {
-                SpawnHitFlash(target, new Color(1f, 0.2f, 0.2f));
+                if (actor.def.key == "chariot_tank") SpawnHitFlash(target, new Color(0.7f, 0.9f, 1f), 0.75f);
+                else if (actor.def.key == "chariot_shock") SpawnHitFlash(target, new Color(0.7f, 0.55f, 1f), 0.9f);
+                else SpawnHitFlash(target, new Color(1f, 0.2f, 0.2f), 0.6f);
                 battleLog = $"{actor.Name} 近战 {target.Name} -{real}";
             }
 
@@ -837,7 +849,7 @@ public class RoguelikeFramework : MonoBehaviour
                     if (ad <= 1)
                     {
                         ApplyDamageWithTraits(actor, t, Mathf.Max(1, Mathf.RoundToInt(dmg * 0.45f)));
-                        SpawnHitFlash(t, new Color(1f, 0.5f, 0.2f));
+                        SpawnHitFlash(t, new Color(1f, 0.5f, 0.2f), 0.75f);
                     }
                 }
             }
@@ -998,7 +1010,7 @@ public class RoguelikeFramework : MonoBehaviour
             go.transform.position = GridToWorld(u.x, u.y);
             go.transform.localScale = new Vector3(0.8f, 0.8f, 1);
             var r = go.GetComponent<Renderer>();
-            r.material = CreateRuntimeMaterial(PickIcon(u), c);
+            r.material = CreateRuntimeMaterial(PickIcon(u), PickVariantTint(u));
 
             var hpBg = GameObject.CreatePrimitive(PrimitiveType.Quad);
             hpBg.name = "HPBarBg";
@@ -1072,22 +1084,40 @@ public class RoguelikeFramework : MonoBehaviour
         return shieldIcon;
     }
 
-    private void SpawnProjectile(Unit from, Unit to, Color color)
+    private Color PickVariantTint(Unit u)
+    {
+        // 同家族不同变体做视觉区分
+        return u.def.key switch
+        {
+            "cannon_missile" => new Color(1f, 0.55f, 0.2f),
+            "cannon_mortar" => new Color(0.95f, 0.75f, 0.35f),
+            "cannon_burst" => new Color(1f, 0.35f, 0.3f),
+            "chariot_tank" => new Color(0.65f, 0.85f, 1f),
+            "chariot_sport" => new Color(0.35f, 1f, 0.9f),
+            "chariot_shock" => new Color(0.8f, 0.7f, 1f),
+            "horse_raider" => new Color(0.6f, 0.95f, 0.6f),
+            "horse_banner" => new Color(0.6f, 0.85f, 1f),
+            "horse_nightmare" => new Color(0.8f, 0.55f, 1f),
+            _ => u.player ? new Color(0.75f, 0.95f, 1f) : new Color(1f, 0.78f, 0.78f)
+        };
+    }
+
+    private void SpawnProjectile(Unit from, Unit to, Color color, float scale = 0.18f, float duration = 0.14f)
     {
         var p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         p.name = "FX_Projectile";
-        p.transform.localScale = Vector3.one * 0.18f;
+        p.transform.localScale = Vector3.one * scale;
         p.transform.position = GridToWorld(from.x, from.y) + new Vector3(0, 0, -0.2f);
         p.GetComponent<Renderer>().material = CreateRuntimeMaterial(null, color);
-        StartCoroutine(MoveFx(p, GridToWorld(to.x, to.y) + new Vector3(0, 0, -0.2f), 0.14f));
+        StartCoroutine(MoveFx(p, GridToWorld(to.x, to.y) + new Vector3(0, 0, -0.2f), duration));
     }
 
-    private void SpawnHitFlash(Unit target, Color color)
+    private void SpawnHitFlash(Unit target, Color color, float scale = 0.6f)
     {
         var fx = GameObject.CreatePrimitive(PrimitiveType.Quad);
         fx.name = "FX_Hit";
         fx.transform.position = GridToWorld(target.x, target.y) + new Vector3(0, 0, -0.25f);
-        fx.transform.localScale = Vector3.one * 0.6f;
+        fx.transform.localScale = Vector3.one * scale;
         fx.GetComponent<Renderer>().material = CreateRuntimeMaterial(null, color);
         StartCoroutine(DestroyFx(fx, 0.1f));
     }
@@ -1127,17 +1157,26 @@ public class RoguelikeFramework : MonoBehaviour
         if (cam == null) return;
 
         Ray ray = cam.ScreenPointToRay(Input.mousePosition);
-        if (!Physics.Raycast(ray, out RaycastHit hit, 100f)) return;
+        if (!Physics.Raycast(ray, out RaycastHit hit, 100f))
+        {
+            // 点击空白处关闭悬浮窗
+            showTooltip = false;
+            return;
+        }
 
         foreach (var v in views)
         {
             if (v.go == hit.collider.gameObject)
             {
                 inspectedUnit = v.unit;
+                ShowTooltip(BuildUnitTooltip(v.unit), v.unit);
                 battleLog = $"查看 {v.unit.Name}{v.unit.star}★";
                 return;
             }
         }
+
+        // 点到非棋子对象也关闭
+        showTooltip = false;
     }
 
     private void HandleMouseDrag()
@@ -1299,20 +1338,68 @@ public class RoguelikeFramework : MonoBehaviour
 
     #region GUI
 
-    private void DrawInspectPanel(float x, float y, float w, float h)
+    private string BuildUnitTooltip(Unit u)
     {
-        string txt = "单击棋子查看属性与羁绊";
-        if (inspectedUnit != null)
+        var team = u.player ? (state == RunState.Battle ? playerUnits : deploySlots) : enemyUnits;
+        return
+            $"【{u.Name}{u.star}★】{(u.player ? "我方" : "敌方")}\n" +
+            $"生命 {Mathf.Max(0, u.hp)}/{u.maxHp}  攻击 {u.atk}  速度 {u.spd}  射程 {u.range}\n" +
+            $"职业 {GetClassCn(u.ClassTag)} / 阵营 {u.OriginTag}\n" +
+            $"{GetInspectSynergyText(u, team)}\n" +
+            $"本场输出 {u.damageDealt}  本场承伤 {u.damageTaken}";
+    }
+
+    private void ShowTooltip(string text, Unit anchor = null)
+    {
+        tooltipText = text;
+
+        if (anchor != null && Camera.main != null)
         {
-            var team = inspectedUnit.player ? (state == RunState.Battle ? playerUnits : deploySlots) : enemyUnits;
-            txt =
-                $"{inspectedUnit.Name}{inspectedUnit.star}★ ({(inspectedUnit.player ? "我方" : "敌方")})\n" +
-                $"HP {Mathf.Max(0, inspectedUnit.hp)}/{inspectedUnit.maxHp}  ATK {inspectedUnit.atk}  SPD {inspectedUnit.spd}  RNG {inspectedUnit.range}\n" +
-                $"职业 {inspectedUnit.ClassTag} / 阵营 {inspectedUnit.OriginTag}\n" +
-                $"{GetInspectSynergyText(inspectedUnit, team)}\n" +
-                $"本场输出 {inspectedUnit.damageDealt}  本场承伤 {inspectedUnit.damageTaken}";
+            Vector3 wp = GridToWorld(anchor.x, anchor.y) + new Vector3(0.7f, 0.55f, 0f);
+            Vector3 sp = Camera.main.WorldToScreenPoint(wp);
+            tooltipPos = new Vector2(sp.x, Screen.height - sp.y);
         }
-        GUI.Box(new Rect(x, y, w, h), txt);
+        else
+        {
+            tooltipPos = new Vector2(Input.mousePosition.x + 16f, Screen.height - Input.mousePosition.y + 16f);
+        }
+
+        showTooltip = true;
+    }
+
+    private void DrawFloatingTooltip()
+    {
+        if (!showTooltip || string.IsNullOrEmpty(tooltipText)) return;
+
+        float w = 460f;
+        float h = 220f;
+        float x = Mathf.Clamp(tooltipPos.x, 10f, Screen.width - w - 10f);
+        float y = Mathf.Clamp(tooltipPos.y, 10f, Screen.height - h - 10f);
+
+        // 阴影
+        Color old = GUI.color;
+        GUI.color = new Color(0f, 0f, 0f, 0.45f);
+        GUI.DrawTexture(new Rect(x + 4, y + 4, w, h), Texture2D.whiteTexture);
+
+        // 外边框（偏金色）
+        GUI.color = new Color(0.78f, 0.66f, 0.35f, 0.98f);
+        GUI.DrawTexture(new Rect(x, y, w, h), Texture2D.whiteTexture);
+
+        // 主体底色
+        GUI.color = new Color(0.07f, 0.1f, 0.15f, 0.98f);
+        GUI.DrawTexture(new Rect(x + 2, y + 2, w - 4, h - 4), Texture2D.whiteTexture);
+
+        // 标题条
+        GUI.color = new Color(0.12f, 0.18f, 0.28f, 0.98f);
+        GUI.DrawTexture(new Rect(x + 2, y + 2, w - 4, 30), Texture2D.whiteTexture);
+
+        // 分割线
+        GUI.color = new Color(0.78f, 0.66f, 0.35f, 0.8f);
+        GUI.DrawTexture(new Rect(x + 12, y + 36, w - 24, 1), Texture2D.whiteTexture);
+        GUI.color = old;
+
+        GUI.Label(new Rect(x + 10, y + 8, w - 20, 20), "战场情报 / 羁绊信息");
+        GUI.Label(new Rect(x + 12, y + 42, w - 24, h - 50), tooltipText);
     }
 
     private void DrawBattleStats(float x, float y, float w, float h)
@@ -1378,27 +1465,37 @@ public class RoguelikeFramework : MonoBehaviour
 
     private void DrawSynergyClickPanel(float x, float y, float w, float h, List<Unit> team)
     {
-        GUI.Box(new Rect(x, y, w, h), "羁绊详情（点击查看效果）");
+        GUI.Box(new Rect(x, y, w, h), "羁绊详情（点击弹出悬浮窗）");
 
         string[] classes = { "Vanguard", "Rider", "Artillery" };
         float bx = x + 12;
+        Vector2 mp = Event.current.mousePosition;
         for (int i = 0; i < classes.Length; i++)
         {
             int c = CountClass(team, classes[i]);
             string label = $"{GetClassCn(classes[i])} ({c})";
-            if (GUI.Button(new Rect(bx + i * 155, y + 24, 145, 26), label))
+            Rect btnRect = new Rect(bx + i * 155, y + 24, 145, 26);
+
+            Color old = GUI.color;
+            Color baseColor;
+            if (c >= 4) baseColor = new Color(1f, 0.82f, 0.32f, 0.95f);      // 金
+            else if (c >= 2) baseColor = new Color(0.35f, 0.75f, 1f, 0.95f); // 蓝
+            else baseColor = new Color(0.45f, 0.45f, 0.45f, 0.9f);           // 灰
+
+            bool hover = btnRect.Contains(mp);
+            GUI.color = hover ? new Color(Mathf.Min(1f, baseColor.r + 0.12f), Mathf.Min(1f, baseColor.g + 0.12f), Mathf.Min(1f, baseColor.b + 0.12f), 1f) : baseColor;
+
+            if (GUI.Button(btnRect, label))
             {
                 selectedSynergyKey = classes[i];
+                string info = GetSynergyEffectDesc(selectedSynergyKey, c) + "\n" +
+                              $"包含棋子：{GetUnitsOfClassText(selectedSynergyKey)}";
+                ShowTooltip(info);
             }
+            GUI.color = old;
         }
 
-        if (!string.IsNullOrEmpty(selectedSynergyKey))
-        {
-            int c = CountClass(team, selectedSynergyKey);
-            string info = GetSynergyEffectDesc(selectedSynergyKey, c) + "\n" +
-                          $"包含棋子：{GetUnitsOfClassText(selectedSynergyKey)}";
-            GUI.Label(new Rect(x + 12, y + 56, w - 24, h - 62), info);
-        }
+        GUI.Label(new Rect(x + 12, y + 58, w - 24, h - 62), "提示：灰=未成型，蓝=激活，金=高阶激活");
     }
 
     private void OnGUI()
@@ -1412,7 +1509,7 @@ public class RoguelikeFramework : MonoBehaviour
             battleLog = "作弊生效：金币 +999";
         }
 
-        DrawInspectPanel(784, 58, 420, 170);
+        GUI.Box(new Rect(784, 58, 420, 48), "信息悬浮窗模式：点击棋子/羁绊按钮查看详情");
 
         GUI.Box(new Rect(16, 110, 350, 95), "已选海克斯");
         string hexTxt = selectedHexes.Count == 0 ? "暂无" : string.Join(" | ", selectedHexes.ConvertAll(h => h.name));
@@ -1465,6 +1562,7 @@ public class RoguelikeFramework : MonoBehaviour
                         if (GUI.Button(new Rect(gx, gy, cellW - 4, cellH - 4), $"{placed.Name}\n{placed.star}★"))
                         {
                             inspectedUnit = placed;
+                            ShowTooltip(BuildUnitTooltip(placed));
                             battleLog = $"查看 {placed.Name}";
                         }
                     }
@@ -1481,7 +1579,21 @@ public class RoguelikeFramework : MonoBehaviour
             for (int i = 0; i < shopOffers.Count; i++)
             {
                 var d = unitDefs[shopOffers[i]];
-                if (GUI.Button(new Rect(panelX + 16 + i * 110, panelY + 28, 104, 45), $"{d.name}\n{d.cost}金")) BuyOffer(i);
+                Rect r = new Rect(panelX + 16 + i * 110, panelY + 28, 104, 45);
+
+                Color old = GUI.color;
+                // 按费用着色（1~5费）
+                GUI.color = d.cost switch
+                {
+                    1 => new Color(0.75f, 0.75f, 0.75f, 0.95f),
+                    2 => new Color(0.35f, 0.9f, 0.35f, 0.95f),
+                    3 => new Color(0.35f, 0.75f, 1f, 0.95f),
+                    4 => new Color(0.7f, 0.45f, 1f, 0.95f),
+                    _ => new Color(1f, 0.75f, 0.28f, 0.95f)
+                };
+
+                if (GUI.Button(r, $"{d.name}\n{d.cost}金")) BuyOffer(i);
+                GUI.color = old;
             }
             if (GUI.Button(new Rect(panelX + 600, panelY + 34, 120, 28), "刷新(-1)")) RefreshShop();
             if (GUI.Button(new Rect(panelX + 730, panelY + 34, 120, 28), "买经验(-4)"))
@@ -1499,6 +1611,7 @@ public class RoguelikeFramework : MonoBehaviour
                     if (GUI.Button(new Rect(bx, panelY + 88, 84, 45), $"{u.Name}\n{u.star}★"))
                     {
                         inspectedUnit = u;
+                        ShowTooltip(BuildUnitTooltip(u));
                         battleLog = $"查看 {u.Name}";
                     }
                 }
@@ -1542,7 +1655,23 @@ public class RoguelikeFramework : MonoBehaviour
             {
                 var h = currentHexOffers[i];
                 float x = 30 + i * 240;
-                GUI.Box(new Rect(x, 260, 220, 180), $"[{h.rarity}] {h.name}\n\n{h.desc}");
+                Rect card = new Rect(x, 260, 220, 180);
+
+                Color rarityColor = h.rarity switch
+                {
+                    "金" => new Color(1f, 0.8f, 0.3f, 1f),
+                    "蓝" => new Color(0.35f, 0.75f, 1f, 1f),
+                    _ => new Color(0.8f, 0.8f, 0.8f, 1f)
+                };
+
+                Color old = GUI.color;
+                GUI.color = rarityColor;
+                GUI.DrawTexture(card, Texture2D.whiteTexture);
+                GUI.color = new Color(0.08f, 0.1f, 0.15f, 0.98f);
+                GUI.DrawTexture(new Rect(card.x + 2, card.y + 2, card.width - 4, card.height - 4), Texture2D.whiteTexture);
+                GUI.color = old;
+
+                GUI.Box(card, $"[{h.rarity}] {h.name}\n\n{h.desc}");
                 if (GUI.Button(new Rect(x + 40, 400, 140, 30), "选择")) PickHex(i);
             }
         }
@@ -1568,6 +1697,8 @@ public class RoguelikeFramework : MonoBehaviour
                 battleLog = "新一轮开始";
             }
         }
+
+        DrawFloatingTooltip();
     }
 
     #endregion
