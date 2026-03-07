@@ -89,3 +89,27 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 在战斗统计面板补充“失败复盘摘要”（MVP伤害/承伤）
 2. 做一轮真实战斗回归（非强制胜利）验证日志一致性
+
+## 2026-03-07 03:33 EST
+### Done
+- 推进 Stage A1：把 `RoguelikeFramework` 改为 `partial class`，开始按职责拆分文件
+- 新建 `Assets/Scripts/Systems/RoguelikeFramework.Flow.cs`
+- 将流程相关逻辑迁移到 Flow 文件：
+  - 开发回归入口：`DevAdvanceOneStep` / `DevRunRegression3Floors` / `RestartRun`
+  - 核心状态机流转：`StartPreparationForCurrentStage` / `StartBattle` / `SpawnEnemiesForStage` / `EndBattle`
+  - 战斗结算复盘：`BuildBattleOutcomeDetail`
+- 原 `RoguelikeFramework.cs` 保留主数据结构与系统逻辑，流程职责解耦第一步完成
+
+### Verify
+- 静态检查：上述方法在主文件中不再重复定义，已由 Flow 分文件单点维护
+- 影响面评估：仅做代码组织重构，不改数值和状态机行为分支
+- 仓库检查：当前变更仅涉及 `RoguelikeFramework.cs` 与新增 `RoguelikeFramework.Flow.cs`
+
+### Found / Risks
+- 仍未进行 Unity Editor 实机回归（本轮为结构重构，下一轮需跑完整闭环）
+- 其余职责（Economy/Battle细节/UI）仍在主文件，后续仍需继续拆分
+
+### Next
+1. 在 Unity 内跑一轮强制 3 关回归 + 一轮真实战斗回归，确认拆分无行为回归
+2. 继续 Stage A1：抽离 Economy/Shop 相关方法到独立 partial 文件
+3. 逐步补“最小可脚本化回归”入口，减少每次改动后的手工验证成本
