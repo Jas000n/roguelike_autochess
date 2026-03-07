@@ -235,6 +235,60 @@ public class RoguelikeFramework : MonoBehaviour
         }
     }
 
+    // 开发快捷：一键推进一小步，降低手动回归成本。
+    private void DevAdvanceOneStep()
+    {
+        switch (state)
+        {
+            case RunState.Stage:
+                StartPreparationForCurrentStage();
+                battleLog = "[DEV] Stage -> Prepare";
+                break;
+            case RunState.Prepare:
+                StartBattle();
+                battleLog = "[DEV] Prepare -> Battle";
+                break;
+            case RunState.Battle:
+                EndBattle(true);
+                battleLog = "[DEV] Force Win -> Reward/Next";
+                break;
+            case RunState.Reward:
+                if (currentRewardOffers.Count == 0) RollRewardOffers();
+                PickReward(0);
+                break;
+            case RunState.Hex:
+                if (currentHexOffers.Count == 0) RollHexOffers();
+                PickHex(0);
+                break;
+            case RunState.GameOver:
+                RestartRun();
+                break;
+        }
+    }
+
+    private void RestartRun()
+    {
+        stageIndex = 0;
+        gold = 10;
+        playerLevel = 1;
+        exp = 0;
+        playerLife = 30;
+        winStreak = 0;
+        loseStreak = 0;
+        selectedHexes.Clear();
+        currentRewardOffers.Clear();
+        currentHexOffers.Clear();
+        pendingHexAfterReward = false;
+        benchUnits.Clear();
+        deploySlots.Clear();
+        benchUnits.Add(CreateUnit("soldier_sword", true));
+        benchUnits.Add(CreateUnit("horse_raider", true));
+        benchUnits.Add(CreateUnit("cannon_burst", true));
+        state = RunState.Stage;
+        battleLog = "新一轮开始";
+        RedrawPrepareBoard();
+    }
+
     #region Setup Data
 
     private void BuildUnitDefs()
@@ -829,12 +883,25 @@ public class RoguelikeFramework : MonoBehaviour
     private void RollHexOffers()
     {
         currentHexOffers.Clear();
-        var copy = new List<HexDef>(hexPool);
+
+        // 质量优化：已拿过的海克斯不再重复出现，保证构筑选择持续变化。
+        var copy = new List<HexDef>();
+        foreach (var h in hexPool)
+        {
+            if (!HasHex(h.id)) copy.Add(h);
+        }
+
+        // 如果海克斯池被拿空（理论上后期可能发生），允许从全池重抽，避免流程断裂。
+        if (copy.Count == 0)
+        {
+            copy.AddRange(hexPool);
+        }
+
         for (int i = 0; i < 3 && copy.Count > 0; i++)
         {
-            int idx = UnityEngine.Random.Range(0, copy.Count);
-            currentHexOffers.Add(copy[idx]);
-            copy.RemoveAt(idx);
+            int pick = UnityEngine.Random.Range(0, copy.Count);
+            currentHexOffers.Add(copy[pick]);
+            copy.RemoveAt(pick);
         }
     }
 
@@ -842,8 +909,19 @@ public class RoguelikeFramework : MonoBehaviour
     {
         if (idx < 0 || idx >= currentHexOffers.Count) return;
         var h = currentHexOffers[idx];
-        selectedHexes.Add(h);
-        battleLog = $"获得海克斯：{h.name}";
+
+        // 防御式保护：避免重复添加同一海克斯导致意外叠层。
+        if (!HasHex(h.id))
+        {
+            selectedHexes.Add(h);
+            battleLog = $"获得海克斯：{h.name}";
+        }
+        else
+        {
+            gold += 4;
+            battleLog = $"重复海克斯转化为 +4 金币：{h.name}";
+        }
+
         StartPreparationForCurrentStage();
     }
 
@@ -1934,6 +2012,14 @@ public class RoguelikeFramework : MonoBehaviour
             gold += 999;
             battleLog = "作弊生效：金币 +999";
         }
+        if (GUI.Button(new Rect(950, 14, 130, 28), "开发推进一步"))
+        {
+            DevAdvanceOneStep();
+        }
+        if (GUI.Button(new Rect(950, 46, 130, 28), "开发重开"))
+        {
+            RestartRun();
+        }
 
         GUI.Box(new Rect(16, 112, 560, 92), "");
         GUI.Label(new Rect(28, 118, 180, 20), "已选海克斯");
@@ -2155,23 +2241,7 @@ public class RoguelikeFramework : MonoBehaviour
             GUI.Box(new Rect(16, 220, 520, 130), "章节完成！\n你已经跑通 M1/M2/M3 的基础框架。\n现在可以进入内容填充和平衡阶段。");
             if (GUI.Button(new Rect(30, 315, 140, 30), "重新开始"))
             {
-                stageIndex = 0;
-                gold = 10;
-                playerLevel = 1;
-                exp = 0;
-                playerLife = 30;
-                winStreak = 0;
-                loseStreak = 0;
-                selectedHexes.Clear();
-                currentRewardOffers.Clear();
-                pendingHexAfterReward = false;
-                benchUnits.Clear();
-                deploySlots.Clear();
-                benchUnits.Add(CreateUnit("soldier_sword", true));
-                benchUnits.Add(CreateUnit("horse_raider", true));
-                benchUnits.Add(CreateUnit("cannon_burst", true));
-                state = RunState.Stage;
-                battleLog = "新一轮开始";
+                RestartRun();
             }
         }
 
