@@ -126,6 +126,8 @@ public class RoguelikeFramework : MonoBehaviour
     private GameObject dragGhost;
     private bool isDragging;
     private bool draggingFromBench;
+    private bool pendingDrag;
+    private Vector2 pendingDragStart;
 
     private Texture2D bgTex;
     private Texture2D tileATex;
@@ -181,6 +183,7 @@ public class RoguelikeFramework : MonoBehaviour
     {
         HandleMouseDrag();
         HandleUnitInspectClick();
+        HandlePrepareQuickActions();
 
         if (state != RunState.Battle || !battleStarted) return;
 
@@ -192,6 +195,31 @@ public class RoguelikeFramework : MonoBehaviour
         RunOneTurn();
         RefreshViews();
         CheckBattleEnd();
+    }
+
+    private void HandlePrepareQuickActions()
+    {
+        if (state != RunState.Prepare) return;
+        if (!Input.GetMouseButtonDown(1)) return;
+
+        // 右键战场棋子：快速下场到备战席
+        var cam = Camera.main;
+        if (cam == null) return;
+        Ray ray = cam.ScreenPointToRay(Input.mousePosition);
+        if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+        {
+            foreach (var v in views)
+            {
+                if (v.go != hit.collider.gameObject || v.unit == null) continue;
+                int idx = deploySlots.FindIndex(u => u.id == v.unit.id);
+                if (idx >= 0)
+                {
+                    ReturnDeployToBench(idx);
+                    RedrawPrepareBoard();
+                    return;
+                }
+            }
+        }
     }
 
     #region Setup Data
@@ -220,6 +248,7 @@ public class RoguelikeFramework : MonoBehaviour
         AddDef("general_fire", "火焰君主", "帅", "Leader", "Blaze", 5, 50, 12, 7, 1);
         AddDef("ele_guard", "岩石巨像", "象", "Guardian", "Stone", 3, 48, 8, 5, 1);
         AddDef("guard_assassin", "暗影士", "士", "Assassin", "Shadow", 2, 28, 10, 10, 1);
+        AddDef("guard_blade", "夜刃士", "士", "Assassin", "Night", 2, 27, 11, 11, 1);
         AddDef("soldier_sword", "剑士兵", "兵", "Soldier", "Steel", 1, 24, 8, 8, 1);
 
         foreach (var kv in unitDefs) basePool.Add(kv.Key);
@@ -313,6 +342,7 @@ public class RoguelikeFramework : MonoBehaviour
 
         RefreshShop(true);
         AutoMergeAll();
+        RedrawPrepareBoard();
 
         var st = stages[stageIndex];
         battleLog = $"准备阶段：第{st.floor}关({st.type}) | +{roundBaseGold}+利息{interest}+连胜/败{streakGold}";
@@ -356,8 +386,8 @@ public class RoguelikeFramework : MonoBehaviour
             }
             else
             {
-                // 准备区GUI的Y轴是向下，战斗棋盘Y轴是向上：做一次垂直翻转，避免“排列反了”
-                u.y = 3 - u.y;
+                // 准备阶段直接在战场坐标布阵
+                u.y = Mathf.Clamp(u.y, 0, H - 1);
             }
             playerUnits.Add(u);
         }
@@ -411,7 +441,6 @@ public class RoguelikeFramework : MonoBehaviour
     private void EndBattle(bool win)
     {
         battleStarted = false;
-        state = RunState.Reward;
 
         if (win)
         {
@@ -429,6 +458,26 @@ public class RoguelikeFramework : MonoBehaviour
             gold += reward;
             battleLog = $"失败，保底 +{reward}金币";
         }
+
+        bool giveHex = stages[stageIndex].giveHex;
+        stageIndex++;
+
+        if (stageIndex >= stages.Count)
+        {
+            state = RunState.GameOver;
+            battleLog += " | 章节结束";
+            return;
+        }
+
+        if (giveHex)
+        {
+            RollHexOffers();
+            state = RunState.Hex;
+            battleLog += " | 海克斯三选一";
+            return;
+        }
+
+        StartPreparationForCurrentStage();
     }
 
     private void NextAfterReward()
@@ -590,6 +639,7 @@ public class RoguelikeFramework : MonoBehaviour
         shopOffers.RemoveAt(i);
         battleLog = $"购买 {def.name} -{def.cost}金";
         AutoMergeAll();
+        RedrawPrepareBoard();
     }
 
     private void AutoMergeAll()
@@ -655,6 +705,42 @@ public class RoguelikeFramework : MonoBehaviour
         }
     }
 
+    private bool ReturnDeployToBench(int deployIdx)
+    {
+        if (deployIdx < 0 || deployIdx >= deploySlots.Count) return false;
+        if (benchUnits.Count >= 8)
+        {
+            battleLog = "备战席已满，无法下场";
+            return false;
+        }
+
+        var u = deploySlots[deployIdx];
+        u.x = -1;
+        u.y = -1;
+        benchUnits.Add(u);
+        deploySlots.RemoveAt(deployIdx);
+        battleLog = $"{u.Name} 已下场";
+        return true;
+    }
+
+    private bool SellUnit(Unit u)
+    {
+        if (u == null || u.def == null) return false;
+        int benchIdx = benchUnits.FindIndex(x => x.id == u.id);
+        int deployIdx = deploySlots.FindIndex(x => x.id == u.id);
+        if (benchIdx < 0 && deployIdx < 0) return false;
+
+        int sellGold = Mathf.Max(1, u.def.cost);
+        gold += sellGold;
+
+        if (benchIdx >= 0) benchUnits.RemoveAt(benchIdx);
+        if (deployIdx >= 0) deploySlots.RemoveAt(deployIdx);
+
+        if (inspectedUnit != null && inspectedUnit.id == u.id) inspectedUnit = null;
+        battleLog = $"出售 {u.Name} +{sellGold}金币";
+        return true;
+    }
+
     #endregion
 
     #region Hex / Synergy
@@ -677,7 +763,7 @@ public class RoguelikeFramework : MonoBehaviour
         var h = currentHexOffers[idx];
         selectedHexes.Add(h);
         battleLog = $"获得海克斯：{h.name}";
-        state = RunState.Stage;
+        StartPreparationForCurrentStage();
     }
 
     private bool HasHex(string id)
@@ -716,6 +802,7 @@ public class RoguelikeFramework : MonoBehaviour
             "Vanguard" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位减伤 +10% / +22%（海克斯可再叠加）",
             "Rider" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位速度 +2 / +5，首击突进更强",
             "Artillery" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位伤害 +12% / +22%，4层额外射程+1",
+            "Assassin" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位暴击率 +20% / +45%，暴击伤害 +35%",
             _ => $"{GetClassCn(classTag)}：当前{count}"
         };
     }
@@ -743,13 +830,27 @@ public class RoguelikeFramework : MonoBehaviour
         int v = CountClass(team, "Vanguard");
         int r = CountClass(team, "Rider");
         int a = CountClass(team, "Artillery");
+        int ass = CountClass(team, "Assassin");
 
-        string s = "";
-        if (v >= 2) s += $"钢铁先锋({v}) ";
-        if (r >= 2) s += $"机动骑兵({r}) ";
-        if (a >= 2) s += $"火力炮阵({a}) ";
-        if (string.IsNullOrEmpty(s)) s = "暂无激活羁绊";
-        return s;
+        string summary = "";
+        if (v >= 2) summary += $"钢铁先锋({v}) ";
+        if (r >= 2) summary += $"机动骑兵({r}) ";
+        if (a >= 2) summary += $"火力炮阵({a}) ";
+        if (ass >= 2) summary += $"暗影刺客({ass}) ";
+        if (string.IsNullOrEmpty(summary)) summary = "暂无激活羁绊";
+        return summary;
+    }
+
+    private float GetCritMultiplier(Unit from)
+    {
+        if (from.ClassTag != "Assassin") return 1f;
+        var team = from.player ? playerUnits : enemyUnits;
+        int assassin = CountClass(team, "Assassin");
+        float critChance = 0.1f;
+        if (assassin >= 2) critChance += 0.2f;
+        if (assassin >= 4) critChance += 0.45f;
+        if (UnityEngine.Random.value < critChance) return 1.35f;
+        return 1f;
     }
 
     private float GetDamageMultiplier(Unit from)
@@ -829,7 +930,7 @@ public class RoguelikeFramework : MonoBehaviour
 
         int actorRange = actor.range + GetRangeBonus(actor);
         int dist = Mathf.Abs(actor.x - target.x) + Mathf.Abs(actor.y - target.y);
-        int dmg = Mathf.RoundToInt(actor.atk * GetDamageMultiplier(actor));
+        int dmg = Mathf.RoundToInt(actor.atk * GetDamageMultiplier(actor) * GetCritMultiplier(actor));
 
         // 特色能力
         if (actor.Name.Contains("突袭马") && !actor.usedCharge)
@@ -1168,6 +1269,24 @@ public class RoguelikeFramework : MonoBehaviour
         return Color.Lerp(baseTint, teamTint, 0.38f);
     }
 
+    private Color GetUnitChipColor(Unit u)
+    {
+        if (u == null || u.def == null) return new Color(0.26f, 0.34f, 0.5f, 0.95f);
+        return GetUnitChipColorByClass(u.ClassTag);
+    }
+
+    private Color GetUnitChipColorByClass(string classTag)
+    {
+        return classTag switch
+        {
+            "Vanguard" => new Color(0.3f, 0.58f, 0.86f, 0.95f),
+            "Rider" => new Color(0.27f, 0.73f, 0.58f, 0.95f),
+            "Artillery" => new Color(0.83f, 0.46f, 0.26f, 0.95f),
+            "Assassin" => new Color(0.56f, 0.32f, 0.86f, 0.95f),
+            _ => new Color(0.36f, 0.44f, 0.6f, 0.95f)
+        };
+    }
+
     private void SpawnProjectile(Unit from, Unit to, Color color, float scale = 0.18f, float duration = 0.14f)
     {
         var p = GameObject.CreatePrimitive(PrimitiveType.Sphere);
@@ -1210,6 +1329,29 @@ public class RoguelikeFramework : MonoBehaviour
 
     private Vector3 GridToWorld(int x, int y) => new Vector3(-4.5f + x, -2.5f + y, 0);
 
+    private Rect GetBoardCellGuiRect(int x, int y)
+    {
+        var cam = Camera.main;
+        if (cam == null) return new Rect(-9999, -9999, 0, 0);
+
+        Vector3 c = cam.WorldToScreenPoint(GridToWorld(x, y));
+        Vector3 rx = cam.WorldToScreenPoint(GridToWorld(x, y) + new Vector3(0.48f, 0f, 0f));
+        Vector3 uy = cam.WorldToScreenPoint(GridToWorld(x, y) + new Vector3(0f, 0.48f, 0f));
+        float w = Mathf.Abs(rx.x - c.x) * 2f;
+        float h = Mathf.Abs(uy.y - c.y) * 2f;
+        return new Rect(c.x - w * 0.5f, (Screen.height - c.y) - h * 0.5f, w, h);
+    }
+
+    private void RedrawPrepareBoard()
+    {
+        if (state != RunState.Prepare) return;
+        ClearViews();
+        DrawBoard();
+        var preview = deploySlots.FindAll(u => u.x >= 0 && u.x < 5 && u.y >= 0 && u.y < H);
+        CreateViews(preview, new Color(0.2f, 0.7f, 1f));
+        RefreshViews();
+    }
+
     #endregion
 
     #region Input
@@ -1249,12 +1391,8 @@ public class RoguelikeFramework : MonoBehaviour
     {
         if (state != RunState.Prepare) return;
 
-        float boardX = 32f;
-        float boardY = 220f;
-        float cellW = 70f;
-        float cellH = 55f;
-        int rows = 4;
-        int cols = 7;
+        int deployCols = 5;
+        int deployRows = H;
 
         float panelX = 16f;
         float panelY = Screen.height - 170f;
@@ -1275,13 +1413,12 @@ public class RoguelikeFramework : MonoBehaviour
             float mx = Input.mousePosition.x;
             float myGui = Screen.height - Input.mousePosition.y;
 
-            for (int r = 0; r < rows; r++)
+            for (int r = 0; r < deployRows; r++)
             {
-                for (int c = 0; c < cols; c++)
+                for (int c = 0; c < deployCols; c++)
                 {
-                    float gx = boardX + c * cellW;
-                    float gy = boardY + r * cellH;
-                    if (mx >= gx && mx <= gx + (cellW - 4f) && myGui >= gy && myGui <= gy + (cellH - 4f)) return new Vector2(c, r);
+                    var cell = GetBoardCellGuiRect(c, r);
+                    if (mx >= cell.x && mx <= cell.xMax && myGui >= cell.y && myGui <= cell.yMax) return new Vector2(c, r);
                 }
             }
 
@@ -1293,58 +1430,71 @@ public class RoguelikeFramework : MonoBehaviour
             return new Vector2(-2, -2);
         }
 
-        if (isDragging && dragGhost != null)
-        {
-            var cam = Camera.main;
-            if (cam != null)
-            {
-                float zDist = -0.5f - cam.transform.position.z;
-                Vector3 world = cam.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, zDist));
-                dragGhost.transform.position = new Vector3(world.x, world.y, -0.5f);
-            }
-        }
-
-        if (!Input.GetMouseButtonDown(0)) return;
-
-        Vector2 clickGrid = GetGridAtMouse();
-
         if (!isDragging)
         {
-            if (clickGrid.x >= 0 && clickGrid.x < cols && clickGrid.y >= 0 && clickGrid.y < rows)
+            if (Input.GetMouseButtonDown(0))
             {
-                int deployIdx = FindDeployAt((int)clickGrid.x, (int)clickGrid.y);
-                if (deployIdx >= 0)
+                Vector2 clickGrid = GetGridAtMouse();
+                pendingDrag = false;
+                draggingDeploy = -1;
+                draggingFromBench = false;
+
+                if (clickGrid.x >= 0 && clickGrid.x < deployCols && clickGrid.y >= 0 && clickGrid.y < deployRows)
                 {
-                    draggingDeploy = deployIdx;
-                    draggingFromBench = false;
-                    isDragging = true;
+                    int deployIdx = FindDeployAt((int)clickGrid.x, (int)clickGrid.y);
+                    if (deployIdx >= 0)
+                    {
+                        draggingDeploy = deployIdx;
+                        draggingFromBench = false;
+                        pendingDrag = true;
+                        pendingDragStart = Input.mousePosition;
+                    }
                 }
-            }
-            else if (clickGrid.x == -1)
-            {
-                int benchIdx = (int)clickGrid.y;
-                if (benchIdx >= 0 && benchIdx < benchUnits.Count)
+                else if (clickGrid.x == -1)
                 {
-                    draggingDeploy = benchIdx;
-                    draggingFromBench = true;
-                    isDragging = true;
+                    int benchIdx = (int)clickGrid.y;
+                    if (benchIdx >= 0 && benchIdx < benchUnits.Count)
+                    {
+                        draggingDeploy = benchIdx;
+                        draggingFromBench = true;
+                        pendingDrag = true;
+                        pendingDragStart = Input.mousePosition;
+                    }
                 }
+                return;
             }
 
-            if (isDragging)
+            if (pendingDrag && Input.GetMouseButton(0))
             {
-                dragGhost = GameObject.CreatePrimitive(PrimitiveType.Quad);
-                dragGhost.name = "DragGhost";
-                dragGhost.transform.localScale = Vector3.one * 0.8f;
-                dragGhost.GetComponent<Renderer>().material = CreateRuntimeMaterial(null, new Color(0.3f, 0.8f, 1f, 0.75f));
+                if (Vector2.Distance((Vector2)Input.mousePosition, pendingDragStart) > 8f)
+                {
+                    isDragging = true;
+                    pendingDrag = false;
+                    if (draggingFromBench && draggingDeploy >= 0 && draggingDeploy < benchUnits.Count)
+                        battleLog = $"拖拽中：{benchUnits[draggingDeploy].Name}";
+                    else if (!draggingFromBench && draggingDeploy >= 0 && draggingDeploy < deploySlots.Count)
+                        battleLog = $"拖拽中：{deploySlots[draggingDeploy].Name}";
+                }
+                return;
+            }
+
+            if (pendingDrag && Input.GetMouseButtonUp(0))
+            {
+                pendingDrag = false;
+                draggingDeploy = -1;
+                draggingFromBench = false;
             }
             return;
         }
 
-        if (clickGrid.x >= 0 && clickGrid.x < cols && clickGrid.y >= 0 && clickGrid.y < rows)
+        // 标准拖拽：按下开始，松开落子
+        if (!Input.GetMouseButtonUp(0)) return;
+
+        Vector2 releaseGrid = GetGridAtMouse();
+        if (releaseGrid.x >= 0 && releaseGrid.x < deployCols && releaseGrid.y >= 0 && releaseGrid.y < deployRows)
         {
-            int tx = (int)clickGrid.x;
-            int ty = (int)clickGrid.y;
+            int tx = (int)releaseGrid.x;
+            int ty = (int)releaseGrid.y;
             int targetDeployIdx = FindDeployAt(tx, ty);
 
             if (draggingFromBench)
@@ -1356,10 +1506,12 @@ public class RoguelikeFramework : MonoBehaviour
                     else
                     {
                         var moved = benchUnits[draggingDeploy];
-                        moved.x = tx; moved.y = ty;
+                        moved.x = tx;
+                        moved.y = ty;
                         deploySlots.Add(moved);
                         benchUnits.RemoveAt(draggingDeploy);
                         AutoMergeAll();
+                        RedrawPrepareBoard();
                     }
                 }
             }
@@ -1374,30 +1526,32 @@ public class RoguelikeFramework : MonoBehaviour
                 }
                 deploySlots[draggingDeploy].x = tx;
                 deploySlots[draggingDeploy].y = ty;
+                RedrawPrepareBoard();
             }
         }
-        else if (clickGrid.x == -1)
+        else if (releaseGrid.x == -1)
         {
             if (!draggingFromBench && draggingDeploy >= 0 && draggingDeploy < deploySlots.Count)
             {
-                int benchIdx = (int)clickGrid.y;
+                int benchIdx = (int)releaseGrid.y;
                 if (benchIdx >= benchUnits.Count)
                 {
                     var u = deploySlots[draggingDeploy];
-                    u.x = -1; u.y = -1;
+                    u.x = -1;
+                    u.y = -1;
                     benchUnits.Add(u);
                     deploySlots.RemoveAt(draggingDeploy);
                     AutoMergeAll();
+                    RedrawPrepareBoard();
                 }
                 else battleLog = "该备战席格子已有棋子";
             }
         }
 
         isDragging = false;
+        pendingDrag = false;
         draggingDeploy = -1;
         draggingFromBench = false;
-        if (dragGhost != null) Destroy(dragGhost);
-        dragGhost = null;
     }
 
     #endregion
@@ -1470,7 +1624,7 @@ public class RoguelikeFramework : MonoBehaviour
 
     private void DrawBattleStats(float x, float y, float w, float h)
     {
-        GUI.Box(new Rect(x, y, w, h), "战斗统计（柱状图）");
+        GUI.Box(new Rect(x, y, w, h), "战斗统计");
 
         var all = new List<Unit>();
         all.AddRange(playerUnits);
@@ -1483,38 +1637,45 @@ public class RoguelikeFramework : MonoBehaviour
             if (u.damageTaken > maxVal) maxVal = u.damageTaken;
         }
 
-        GUI.Label(new Rect(x + 10, y + 20, w - 20, 18), "蓝=造成伤害 橙=承受伤害");
+        GUI.Label(new Rect(x + 10, y + 20, w - 20, 20), "蓝=输出  橙=承伤（分队面板）");
 
-        float barMax = w - 150f;
-        float rowH = 18f;
+        float panelGap = 10f;
+        float panelW = (w - 30f) * 0.5f;
+        float panelH = h - 46f;
+        float rowH = 21f;
         float gap = 4f;
+        float barMax = panelW - 165f;
 
-        void DrawTeam(string title, List<Unit> team, float sy)
+        void DrawTeam(string title, List<Unit> team, float px, float py)
         {
-            GUI.Label(new Rect(x + 10, sy, w - 20, 18), title);
-            float ry = sy + 18f;
-            foreach (var u in team)
+            GUI.Box(new Rect(px, py, panelW, panelH), title);
+            var sorted = new List<Unit>(team);
+            sorted.Sort((a, b) => b.damageDealt.CompareTo(a.damageDealt));
+
+            float ry = py + 24f;
+            int maxRows = Mathf.FloorToInt((panelH - 30f) / (rowH + gap));
+            for (int i = 0; i < sorted.Count && i < maxRows; i++)
             {
-                GUI.Label(new Rect(x + 10, ry, 78, rowH), $"{u.Name}");
+                var u = sorted[i];
+                GUI.Label(new Rect(px + 8, ry, 70, rowH), $"{u.Name}");
                 float dealtW = barMax * (u.damageDealt / (float)maxVal);
                 float takenW = barMax * (u.damageTaken / (float)maxVal);
 
                 Color old = GUI.color;
                 GUI.color = new Color(0.25f, 0.72f, 1f, 0.95f);
-                GUI.DrawTexture(new Rect(x + 90, ry + 1, dealtW, rowH - 2), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(px + 80, ry + 1, dealtW, rowH - 3), Texture2D.whiteTexture);
                 GUI.color = new Color(1f, 0.62f, 0.2f, 0.95f);
-                GUI.DrawTexture(new Rect(x + 90, ry + rowH * 0.55f, takenW, rowH * 0.4f), Texture2D.whiteTexture);
+                GUI.DrawTexture(new Rect(px + 80, ry + rowH * 0.56f, takenW, rowH * 0.38f), Texture2D.whiteTexture);
                 GUI.color = old;
 
-                GUI.Label(new Rect(x + 94 + barMax, ry, 70, rowH), $"{u.damageDealt}/{u.damageTaken}");
+                GUI.Label(new Rect(px + 84 + barMax, ry, 78, rowH), $"{u.damageDealt}/{u.damageTaken}");
                 ry += rowH + gap;
             }
         }
 
-        float top = y + 40f;
-        DrawTeam("我方", playerUnits, top);
-        float enemyStart = top + (playerUnits.Count + 1) * (rowH + gap) + 8f;
-        DrawTeam("敌方", enemyUnits, enemyStart);
+        float py = y + 42f;
+        DrawTeam("我方阵容", playerUnits, x + 10f, py);
+        DrawTeam("敌方阵容", enemyUnits, x + 20f + panelW + panelGap, py);
     }
 
     private string StageName(StageType t)
@@ -1588,7 +1749,7 @@ public class RoguelikeFramework : MonoBehaviour
                 GUI.Label(new Rect(card.x + card.width - 52, card.y + 4, 44, 18), active4 ? "MAX" : "ON");
             }
 
-            if (GUI.Button(card, ""))
+            if (GUI.Button(card, GUIContent.none, GUIStyle.none))
             {
                 selectedSynergyKey = cls;
                 string info = GetSynergyEffectDesc(selectedSynergyKey, c) + "\n" +
@@ -1616,52 +1777,87 @@ public class RoguelikeFramework : MonoBehaviour
         buttonStyle = new GUIStyle(GUI.skin.button);
         labelStyle = new GUIStyle(GUI.skin.label);
 
-        // 可读性优先：按钮/文本改为程序化高对比，不使用整图按钮贴图
-        flatPanelTex = CreateFlatTexture(new Color(0.06f, 0.1f, 0.16f, 0.88f));
-        flatButtonTex = CreateFlatTexture(new Color(0.14f, 0.32f, 0.52f, 0.96f));
-        flatButtonHoverTex = CreateFlatTexture(new Color(0.18f, 0.42f, 0.66f, 0.98f));
-        flatButtonActiveTex = CreateFlatTexture(new Color(0.1f, 0.24f, 0.4f, 0.98f));
+        // 统一深蓝铜色主题：提高层次感和信息可读性
+        flatPanelTex = CreateFlatTexture(new Color(0.05f, 0.09f, 0.14f, 0.92f));
+        flatButtonTex = CreateFlatTexture(new Color(0.15f, 0.34f, 0.56f, 0.98f));
+        flatButtonHoverTex = CreateFlatTexture(new Color(0.2f, 0.44f, 0.7f, 0.99f));
+        flatButtonActiveTex = CreateFlatTexture(new Color(0.1f, 0.24f, 0.42f, 0.99f));
 
-        boxStyle.normal.background = uiPanelTex != null ? uiPanelTex : flatPanelTex;
+        // 通用面板统一用程序化底色，避免贴图风格不统一
+        boxStyle.normal.background = flatPanelTex;
         boxStyle.hover.background = boxStyle.normal.background;
         boxStyle.active.background = boxStyle.normal.background;
-        boxStyle.padding = new RectOffset(10, 10, 8, 8);
+        boxStyle.focused.background = boxStyle.normal.background;
+        boxStyle.padding = new RectOffset(12, 12, 10, 10);
         boxStyle.richText = true;
-        boxStyle.normal.textColor = new Color(0.9f, 0.95f, 1f);
+        boxStyle.normal.textColor = new Color(0.93f, 0.96f, 1f);
+        boxStyle.hover.textColor = boxStyle.normal.textColor;
+        boxStyle.active.textColor = boxStyle.normal.textColor;
+        boxStyle.focused.textColor = boxStyle.normal.textColor;
+        boxStyle.fontSize = 13;
 
-        buttonStyle.normal.background = uiButtonTex != null ? uiButtonTex : flatButtonTex;
-        buttonStyle.hover.background = uiButtonHoverTex != null ? uiButtonHoverTex : flatButtonHoverTex;
-        buttonStyle.active.background = uiButtonPressedTex != null ? uiButtonPressedTex : flatButtonActiveTex;
-        buttonStyle.focused.background = uiButtonHoverTex != null ? uiButtonHoverTex : flatButtonHoverTex;
+        // 交互按钮统一使用深色底，保障所有文案可读性
+        buttonStyle.normal.background = flatButtonTex;
+        buttonStyle.hover.background = flatButtonHoverTex;
+        buttonStyle.active.background = flatButtonActiveTex;
+        buttonStyle.focused.background = flatButtonHoverTex;
         buttonStyle.fontStyle = FontStyle.Bold;
+        buttonStyle.fontSize = 13;
         buttonStyle.normal.textColor = Color.white;
         buttonStyle.hover.textColor = Color.white;
-        buttonStyle.active.textColor = new Color(0.92f, 0.96f, 1f);
+        buttonStyle.active.textColor = new Color(0.95f, 0.98f, 1f);
         buttonStyle.padding = new RectOffset(8, 8, 6, 6);
         buttonStyle.alignment = TextAnchor.MiddleCenter;
 
         labelStyle.normal.textColor = new Color(0.9f, 0.95f, 1f);
+        labelStyle.hover.textColor = labelStyle.normal.textColor;
+        labelStyle.active.textColor = labelStyle.normal.textColor;
+        labelStyle.focused.textColor = labelStyle.normal.textColor;
+        labelStyle.fontSize = 13;
 
         stylesReady = true;
     }
 
     private void OnGUI()
     {
-        // 全面回退到 Unity 默认 IMGUI 样式（停用所有 AI UI 皮肤）
-        string topInfo = $"金币:{gold}  等级:{playerLevel}({exp}/{ExpNeed(playerLevel)})  上阵上限:{GetBoardCap()}  连胜:{winStreak} 连败:{loseStreak}";
-        GUI.Box(new Rect(16, 12, 760, 95), $"龙棋传说（M1/M2/M3 进行版）\n{topInfo}\n{battleLog}");
+        EnsureGuiStyles();
 
-        if (GUI.Button(new Rect(784, 20, 130, 32), "作弊 +999金币"))
+        var oldBox = GUI.skin.box;
+        var oldButton = GUI.skin.button;
+        var oldLabel = GUI.skin.label;
+        GUI.skin.box = boxStyle;
+        GUI.skin.button = buttonStyle;
+        GUI.skin.label = labelStyle;
+
+        string topInfo = $"金币:{gold}  等级:{playerLevel}({exp}/{ExpNeed(playerLevel)})  上阵上限:{GetBoardCap()}  连胜:{winStreak} 连败:{loseStreak}";
+        GUI.Box(new Rect(16, 12, 860, 96), "");
+        GUI.Label(new Rect(30, 18, 840, 20), "龙棋传说 | 中国象棋 x 自走棋 x 海克斯构筑");
+        GUI.Label(new Rect(30, 42, 840, 20), topInfo);
+        GUI.Label(new Rect(30, 66, 840, 28), $"战报：{battleLog}");
+
+        string stateText = state switch
+        {
+            RunState.Stage => "阶段选择",
+            RunState.Prepare => "准备阶段",
+            RunState.Battle => "自动战斗",
+            RunState.Reward => "战斗结算",
+            RunState.Hex => "海克斯选择",
+            RunState.GameOver => "章节结束",
+            _ => "状态未知"
+        };
+        GUI.Box(new Rect(886, 12, 318, 48), $"当前状态：{stateText}");
+        GUI.Box(new Rect(886, 62, 318, 46), "情报提示：点击棋子或羁绊卡片查看详细说明");
+
+        if (GUI.Button(new Rect(1088, 14, 108, 28), "调试+999金"))
         {
             gold += 999;
             battleLog = "作弊生效：金币 +999";
         }
 
-        GUI.Box(new Rect(784, 58, 420, 48), "信息悬浮窗模式：点击棋子/羁绊按钮查看详情");
-
-        GUI.Box(new Rect(16, 110, 350, 95), "已选海克斯");
+        GUI.Box(new Rect(16, 112, 560, 92), "");
+        GUI.Label(new Rect(28, 118, 180, 20), "已选海克斯");
         string hexTxt = selectedHexes.Count == 0 ? "暂无" : string.Join(" | ", selectedHexes.ConvertAll(h => h.name));
-        GUI.Label(new Rect(26, 132, 330, 64), hexTxt);
+        GUI.Label(new Rect(28, 140, 540, 54), hexTxt);
 
         if (state == RunState.Stage)
         {
@@ -1682,39 +1878,33 @@ public class RoguelikeFramework : MonoBehaviour
 
         if (state == RunState.Prepare)
         {
-            float cellW = 70f;
-            float cellH = 55f;
-            int rows = 4;
-            int cols = 7;
+            GUI.Box(new Rect(16, 210, 520, 64), $"准备阶段：直接拖拽到战场左侧5列布阵 | 羁绊：{GetSynergySummary(deploySlots)}");
 
-            float boardX = 32f;
-            float boardY = 220f;
-            GUI.Box(new Rect(16, 210, 520, 255), $"战场（拖拽布阵）| 羁绊：{GetSynergySummary(deploySlots)}");
-
-            for (int r = 0; r < rows; r++)
+            for (int y = 0; y < H; y++)
             {
-                for (int c = 0; c < cols; c++)
+                for (int x = 0; x < 5; x++)
                 {
-                    float gx = boardX + c * cellW;
-                    float gy = boardY + r * cellH;
+                    Rect cell = GetBoardCellGuiRect(x, y);
+                    if (cell.width <= 1f || cell.height <= 1f) continue;
 
                     Unit placed = null;
-                    int placedIdx = -1;
                     for (int i = 0; i < deploySlots.Count; i++)
                     {
-                        if (deploySlots[i].x == c && deploySlots[i].y == r) { placed = deploySlots[i]; placedIdx = i; break; }
+                        if (deploySlots[i].x == x && deploySlots[i].y == y) { placed = deploySlots[i]; break; }
                     }
 
-                    if (placed != null)
+                    Color old = GUI.color;
+                    if (placed == null)
                     {
-                        if (GUI.Button(new Rect(gx, gy, cellW - 4, cellH - 4), $"{placed.Name}\n{placed.star}★"))
-                        {
-                            inspectedUnit = placed;
-                            ShowTooltip(BuildUnitTooltip(placed));
-                            battleLog = $"查看 {placed.Name}";
-                        }
+                        GUI.color = new Color(0.22f, 0.28f, 0.4f, 0.4f);
+                        GUI.DrawTexture(cell, Texture2D.whiteTexture);
                     }
-                    else GUI.Box(new Rect(gx, gy, cellW - 4, cellH - 4), "");
+                    else
+                    {
+                        GUI.color = new Color(0.12f, 0.78f, 1f, 0.32f);
+                        GUI.DrawTexture(cell, Texture2D.whiteTexture);
+                    }
+                    GUI.color = old;
                 }
             }
 
@@ -1730,15 +1920,8 @@ public class RoguelikeFramework : MonoBehaviour
                 Rect r = new Rect(panelX + 16 + i * 110, panelY + 28, 104, 45);
 
                 Color old = GUI.color;
-                // 按费用着色（1~5费）
-                GUI.color = d.cost switch
-                {
-                    1 => new Color(0.75f, 0.75f, 0.75f, 0.95f),
-                    2 => new Color(0.35f, 0.9f, 0.35f, 0.95f),
-                    3 => new Color(0.35f, 0.75f, 1f, 0.95f),
-                    4 => new Color(0.7f, 0.45f, 1f, 0.95f),
-                    _ => new Color(1f, 0.75f, 0.28f, 0.95f)
-                };
+                // 商店与备战席保持同一职业配色，避免同棋子颜色不一致
+                GUI.color = GetUnitChipColorByClass(d.classTag);
 
                 if (GUI.Button(r, $"{d.name}\n{d.cost}金")) BuyOffer(i);
                 GUI.color = old;
@@ -1756,38 +1939,69 @@ public class RoguelikeFramework : MonoBehaviour
                 if (i < benchUnits.Count)
                 {
                     var u = benchUnits[i];
+                    Color oldBtn = GUI.color;
+                    GUI.color = GetUnitChipColor(u);
                     if (GUI.Button(new Rect(bx, panelY + 88, 84, 45), $"{u.Name}\n{u.star}★"))
                     {
                         inspectedUnit = u;
                         ShowTooltip(BuildUnitTooltip(u));
                         battleLog = $"查看 {u.Name}";
                     }
+                    GUI.color = oldBtn;
                 }
                 else GUI.Box(new Rect(bx, panelY + 88, 84, 45), "");
             }
 
             if (GUI.Button(new Rect(panelX + panelW - 160, panelY + 100, 140, 36), "开始战斗")) StartBattle();
 
+            if (inspectedUnit != null)
+            {
+                int depIdx = deploySlots.FindIndex(u => u.id == inspectedUnit.id);
+                int benIdx = benchUnits.FindIndex(u => u.id == inspectedUnit.id);
+                if (depIdx >= 0)
+                {
+                    if (GUI.Button(new Rect(panelX + panelW - 315, panelY + 100, 140, 36), "下场(备战席)"))
+                    {
+                        if (ReturnDeployToBench(depIdx)) RedrawPrepareBoard();
+                    }
+                }
+                if (depIdx >= 0 || benIdx >= 0)
+                {
+                    if (GUI.Button(new Rect(panelX + panelW - 470, panelY + 100, 140, 36), "出售选中"))
+                    {
+                        if (SellUnit(inspectedUnit)) RedrawPrepareBoard();
+                    }
+                }
+            }
+
             DrawSynergyClickPanel(548, 220, 660, 126, deploySlots);
         }
 
         if (state == RunState.Battle)
         {
-            GUI.Box(new Rect(16, 220, 500, 120), $"战斗中（自动）\n速度：{speedLevel}x | 我方羁绊：{GetSynergySummary(playerUnits)}");
-            if (GUI.Button(new Rect(30, 280, 120, 24), "切换加速"))
+            int allyAlive = playerUnits.FindAll(u => u.Alive).Count;
+            int enemyAlive = enemyUnits.FindAll(u => u.Alive).Count;
+
+            GUI.Box(new Rect(16, 220, 500, 244),
+                $"战斗中（自动执行）\n回合速度：{speedLevel}x\n存活单位：我方 {allyAlive} / 敌方 {enemyAlive}\n我方羁绊：{GetSynergySummary(playerUnits)}\n\n最近战况：\n{battleLog}");
+
+            if (GUI.Button(new Rect(30, 416, 130, 32), "切换速度"))
             {
                 if (speedLevel == 1) speedLevel = 2;
                 else if (speedLevel == 2) speedLevel = 4;
                 else speedLevel = 1;
             }
-            if (GUI.Button(new Rect(160, 280, 140, 24), showBattleStats ? "隐藏战斗统计" : "显示战斗统计"))
+            if (GUI.Button(new Rect(170, 416, 170, 32), showBattleStats ? "隐藏战斗统计" : "显示战斗统计"))
             {
                 showBattleStats = !showBattleStats;
             }
 
-            DrawSynergyClickPanel(16, 346, 500, 120, playerUnits);
+            DrawSynergyClickPanel(16, 470, 500, 120, playerUnits);
 
-            if (showBattleStats) DrawBattleStats(548, 170, 660, 470);
+            if (showBattleStats)
+            {
+                DrawBattleStats(540, 170, 668, 470);
+            }
         }
 
         if (state == RunState.Reward)
@@ -1860,7 +2074,29 @@ public class RoguelikeFramework : MonoBehaviour
             }
         }
 
+        if (state == RunState.Prepare && isDragging)
+        {
+            string dragText = "拖拽中";
+            if (draggingFromBench && draggingDeploy >= 0 && draggingDeploy < benchUnits.Count) dragText = $"拖拽中：{benchUnits[draggingDeploy].Name}";
+            if (!draggingFromBench && draggingDeploy >= 0 && draggingDeploy < deploySlots.Count) dragText = $"拖拽中：{deploySlots[draggingDeploy].Name}";
+
+            float mx = Input.mousePosition.x + 14f;
+            float my = Screen.height - Input.mousePosition.y + 14f;
+            var r = new Rect(mx, my, 170, 38);
+            Color old = GUI.color;
+            GUI.color = new Color(0f, 0f, 0f, 0.55f);
+            GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, r.width, r.height), Texture2D.whiteTexture);
+            GUI.color = new Color(0.18f, 0.42f, 0.72f, 0.96f);
+            GUI.DrawTexture(r, Texture2D.whiteTexture);
+            GUI.color = old;
+            GUI.Label(new Rect(r.x + 8, r.y + 9, r.width - 14, 20), dragText);
+        }
+
         DrawFloatingTooltip();
+
+        GUI.skin.box = oldBox;
+        GUI.skin.button = oldButton;
+        GUI.skin.label = oldLabel;
     }
 
     #endregion
