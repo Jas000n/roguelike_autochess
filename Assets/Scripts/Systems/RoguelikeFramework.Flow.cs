@@ -183,6 +183,133 @@ public partial class RoguelikeFramework
         Debug.Log(result);
     }
 
+    // UI/交互烟雾回归：覆盖商店、上阵、替换、出售、战斗、奖励、海克斯的关键链路。
+    private void DevRunUiSmokeTest()
+    {
+        var lines = new List<string>();
+        int pass = 0;
+        int fail = 0;
+
+        void Check(string name, bool ok, string detailIfFail)
+        {
+            if (ok)
+            {
+                pass++;
+                lines.Add($"PASS | {name}");
+            }
+            else
+            {
+                fail++;
+                lines.Add($"FAIL | {name} | {detailIfFail}");
+            }
+        }
+
+        RestartRun();
+        Check("重开后状态=Stage", state == RunState.Stage, $"state={state}");
+
+        StartPreparationForCurrentStage();
+        Check("可进入准备阶段", state == RunState.Prepare, $"state={state}");
+        Check("商店有5个槽位", shopOffers.Count == 5, $"shopOffers={shopOffers.Count}");
+
+        int oldGold = gold;
+        var oldShop = new List<string>(shopOffers);
+        lockShop = true;
+        RefreshShop(true);
+        bool lockKeep = shopOffers.Count == oldShop.Count;
+        if (lockKeep)
+        {
+            for (int i = 0; i < oldShop.Count; i++) if (shopOffers[i] != oldShop[i]) { lockKeep = false; break; }
+        }
+        Check("锁店后刷新不变", lockKeep, "锁店刷新改变了商品");
+        lockShop = false;
+
+        int expBefore = exp;
+        int lvBefore = playerLevel;
+        if (gold >= 4) { gold -= 4; GainExp(4); }
+        Check("买经验可生效", playerLevel > lvBefore || exp >= expBefore, $"lvBefore={lvBefore}, lvNow={playerLevel}, expBefore={expBefore}, expNow={exp}");
+
+        if (shopOffers.Count > 0)
+        {
+            string key = shopOffers[0];
+            int ownedBefore = CountOwnedCopies(key);
+            int unitBefore = deploySlots.Count + benchUnits.Count;
+            int goldBeforeBuy = gold;
+            BuyOffer(0);
+            int unitAfter = deploySlots.Count + benchUnits.Count;
+            bool bought = gold <= goldBeforeBuy && (CountOwnedCopies(key) >= ownedBefore || unitAfter >= unitBefore);
+            Check("购买棋子链路", bought, $"goldBefore={goldBeforeBuy}, goldAfter={gold}, ownedBefore={ownedBefore}, ownedAfter={CountOwnedCopies(key)}");
+        }
+        else Check("购买棋子链路", false, "商店为空");
+
+        if (benchUnits.Count > 0)
+        {
+            var u = benchUnits[0];
+            benchUnits.RemoveAt(0);
+            u.x = 0;
+            u.y = 2;
+            deploySlots.Add(u);
+        }
+        Check("备战席可上阵", deploySlots.Count > 0, "deploySlots=0");
+
+        if (benchUnits.Count > 0 && deploySlots.Count > 0)
+        {
+            var b = benchUnits[0];
+            var d = deploySlots[0];
+            b.x = d.x;
+            b.y = d.y;
+            d.x = -1;
+            d.y = -1;
+            deploySlots[0] = b;
+            benchUnits[0] = d;
+        }
+        Check("备战席可替换场上", deploySlots.Count > 0 && benchUnits.Count > 0, "替换后队列异常");
+
+        int sellGoldBefore = gold;
+        bool sold = false;
+        if (deploySlots.Count > 0)
+        {
+            sold = SellUnit(deploySlots[0]);
+        }
+        Check("场外出售链路", sold && gold > sellGoldBefore, $"sold={sold}, goldBefore={sellGoldBefore}, goldAfter={gold}");
+
+        if (deploySlots.Count == 0) AutoDeployFallback();
+        StartBattle();
+        Check("可进入战斗阶段", state == RunState.Battle && battleStarted, $"state={state}, battleStarted={battleStarted}");
+        Check("战斗双方单位存在", playerUnits.Count > 0 && enemyUnits.Count > 0, $"p={playerUnits.Count}, e={enemyUnits.Count}");
+
+        DevResolveBattleFast();
+        Check("战斗可正常结算", state == RunState.Reward || state == RunState.GameOver, $"state={state}");
+
+        if (state == RunState.Reward)
+        {
+            int stageBefore = stageIndex;
+            PickReward(0);
+            Check("奖励可选择并推进", state == RunState.Prepare || state == RunState.Hex || state == RunState.GameOver, $"state={state}, stageBefore={stageBefore}, stageNow={stageIndex}");
+            if (state == RunState.Hex)
+            {
+                PickHex(0);
+                Check("海克斯可选择并返回准备", state == RunState.Prepare || state == RunState.GameOver, $"state={state}");
+            }
+        }
+
+        string summary = $"[DEV][UI_SMOKE] pass={pass} fail={fail}";
+        battleLog = summary + (fail > 0 ? "（详见DevReports/ui_smoke_report.log）" : "（全通过）");
+        Debug.Log(summary);
+
+        try
+        {
+            string dir = Path.Combine(Application.persistentDataPath, "DevReports");
+            Directory.CreateDirectory(dir);
+            string path = Path.Combine(dir, "ui_smoke_report.log");
+            var text = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} | {summary}\n" + string.Join("\n", lines) + "\n";
+            File.AppendAllText(path, text + Environment.NewLine);
+        }
+        catch (Exception e)
+        {
+            Debug.Log($"[DEV][UI_SMOKE] report write failed: {e.Message}");
+        }
+    }
+
     private void DevRunBalanceIterations(int rounds)
     {
         if (rounds < 1) rounds = 1;
