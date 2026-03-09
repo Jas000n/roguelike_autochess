@@ -198,7 +198,11 @@ public partial class RoguelikeFramework : MonoBehaviour
     private GUIStyle titleStyle;
     private GUIStyle wrapLabelStyle;
     private GUIStyle hudStatStyle;
+    private GUIStyle chipTitleStyle;
+    private GUIStyle chipMetaStyle;
     private bool stylesReady;
+    private float uiScale = 1f;
+    private Font uiDynamicFont;
 
     private readonly Dictionary<string, Texture2D> hexTextures = new();
     private readonly Dictionary<string, Texture2D> unitTextures = new();
@@ -327,36 +331,41 @@ public partial class RoguelikeFramework : MonoBehaviour
         basePool.Clear();
 
         // 车系变体
-        AddDef("chariot_tank", "坦克车", "车", "Vanguard", "Steel", 3, 52, 8, 5, 1);
-        AddDef("chariot_sport", "跑车", "车", "Rider", "Wind", 3, 34, 11, 12, 1);
-        AddDef("chariot_shock", "震荡车", "车", "Vanguard", "Thunder", 4, 42, 12, 7, 1);
+        AddDef("chariot_tank", "坦克车", "车", "Vanguard", "Steel", 3, 66, 7, 5, 1);
+        AddDef("chariot_sport", "跑车", "车", "Rider", "Wind", 3, 38, 11, 13, 1);
+        AddDef("chariot_shock", "震荡车", "车", "Vanguard", "Thunder", 4, 58, 11, 7, 1);
 
         // 马系变体
-        AddDef("horse_raider", "突袭马", "马", "Rider", "Shadow", 2, 30, 11, 11, 1);
-        AddDef("horse_banner", "战旗马", "马", "Rider", "Stone", 3, 34, 9, 10, 1);
-        AddDef("horse_nightmare", "梦魇马", "马", "Rider", "Night", 4, 32, 13, 10, 1);
+        AddDef("horse_raider", "突袭马", "马", "Rider", "Shadow", 2, 33, 11, 12, 1);
+        AddDef("horse_banner", "战旗马", "马", "Rider", "Stone", 3, 40, 9, 10, 1);
+        AddDef("horse_nightmare", "梦魇马", "马", "Rider", "Night", 4, 37, 15, 11, 1);
+        AddDef("horse_wind", "疾风马", "马", "Rider", "Wind", 2, 31, 10, 13, 1);
 
         // 炮系变体
-        AddDef("cannon_missile", "导弹炮", "炮", "Artillery", "Blaze", 4, 28, 16, 7, 4);
-        AddDef("cannon_mortar", "迫击炮", "炮", "Artillery", "Stone", 3, 30, 12, 7, 3);
-        AddDef("cannon_burst", "连发炮", "炮", "Artillery", "Steel", 2, 26, 9, 10, 3);
-        AddDef("cannon_sniper", "狙击炮", "炮", "Artillery", "Shadow", 3, 24, 14, 8, 5);
-        AddDef("cannon_arc", "电弧炮", "炮", "Artillery", "Thunder", 2, 25, 10, 9, 3);
-        AddDef("cannon_scout", "侦察炮", "炮", "Artillery", "Wind", 1, 21, 8, 9, 3);
+        AddDef("cannon_missile", "导弹炮", "炮", "Artillery", "Blaze", 4, 29, 18, 7, 4);
+        AddDef("cannon_mortar", "迫击炮", "炮", "Artillery", "Stone", 3, 34, 13, 7, 3);
+        AddDef("cannon_burst", "连发炮", "炮", "Artillery", "Steel", 2, 28, 10, 10, 3);
+        AddDef("cannon_sniper", "狙击炮", "炮", "Artillery", "Shadow", 3, 25, 16, 8, 5);
+        AddDef("cannon_arc", "电弧炮", "炮", "Artillery", "Thunder", 2, 27, 11, 9, 3);
+        AddDef("cannon_scout", "侦察炮", "炮", "Artillery", "Wind", 1, 22, 8, 10, 3);
+        AddDef("cannon_frost", "寒晶炮", "炮", "Artillery", "Frost", 4, 27, 17, 7, 4);
 
         // 基础补充
-        AddDef("general_fire", "火焰君主", "帅", "Leader", "Blaze", 5, 50, 12, 7, 1);
-        AddDef("ele_guard", "岩石巨像", "象", "Guardian", "Stone", 3, 48, 8, 5, 1);
-        AddDef("guard_assassin", "暗影士", "士", "Assassin", "Shadow", 2, 28, 10, 10, 1);
-        AddDef("guard_blade", "夜刃士", "士", "Assassin", "Night", 2, 27, 11, 11, 1);
-        AddDef("guard_poison", "毒牙士", "士", "Assassin", "Venom", 3, 30, 12, 10, 1);
-        AddDef("guard_mirror", "镜影士", "士", "Assassin", "Venom", 4, 29, 14, 12, 1);
-        AddDef("chariot_bulwark", "壁垒车", "车", "Vanguard", "Stone", 2, 46, 7, 6, 1);
-        AddDef("chariot_ram", "冲城车", "车", "Vanguard", "Blaze", 4, 54, 9, 6, 1);
-        AddDef("soldier_phalanx", "方阵兵", "兵", "Vanguard", "Steel", 1, 28, 6, 7, 1);
-        AddDef("soldier_guard", "护卫兵", "兵", "Vanguard", "Stone", 1, 30, 6, 7, 1);
-        AddDef("soldier_sword", "剑士兵", "兵", "Soldier", "Steel", 1, 24, 8, 8, 1);
-        AddDef("horse_lancer", "枪骑马", "马", "Rider", "Steel", 2, 32, 10, 10, 1);
+        AddDef("general_fire", "火焰君主", "帅", "Leader", "Blaze", 5, 58, 13, 8, 1);
+        AddDef("ele_guard", "岩石巨像", "象", "Guardian", "Stone", 3, 60, 8, 5, 1);
+        AddDef("guard_assassin", "暗影士", "士", "Assassin", "Shadow", 2, 30, 11, 11, 1);
+        AddDef("guard_blade", "夜刃士", "士", "Assassin", "Night", 2, 29, 12, 12, 1);
+        AddDef("guard_poison", "毒牙士", "士", "Assassin", "Venom", 3, 32, 13, 11, 1);
+        AddDef("guard_mirror", "镜影士", "士", "Assassin", "Venom", 4, 31, 16, 12, 1);
+        AddDef("guard_mist", "雾刃士", "士", "Assassin", "Mist", 3, 31, 13, 12, 1);
+        AddDef("guard_holy", "圣卫士", "士", "Guardian", "Holy", 3, 54, 8, 7, 1);
+        AddDef("chariot_bulwark", "壁垒车", "车", "Vanguard", "Stone", 2, 58, 7, 6, 1);
+        AddDef("chariot_ram", "冲城车", "车", "Vanguard", "Blaze", 4, 62, 10, 6, 1);
+        AddDef("soldier_phalanx", "方阵兵", "兵", "Vanguard", "Steel", 1, 34, 6, 7, 1);
+        AddDef("soldier_guard", "护卫兵", "兵", "Vanguard", "Stone", 1, 36, 6, 7, 1);
+        AddDef("soldier_sword", "剑士兵", "兵", "Soldier", "Steel", 1, 26, 9, 8, 1);
+        AddDef("soldier_zeal", "誓约兵", "兵", "Soldier", "Holy", 2, 29, 10, 9, 1);
+        AddDef("horse_lancer", "枪骑马", "马", "Rider", "Steel", 2, 35, 11, 11, 1);
 
         foreach (var kv in unitDefs) basePool.Add(kv.Key);
     }
@@ -388,7 +397,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         stages.Add(new StageNode { floor = 5, type = StageType.Normal, power = 4, giveHex = false });
         stages.Add(new StageNode { floor = 6, type = StageType.Elite, power = 4, giveHex = true });
         stages.Add(new StageNode { floor = 7, type = StageType.Normal, power = 5, giveHex = false });
-        stages.Add(new StageNode { floor = 8, type = StageType.Boss, power = 6, giveHex = true });
+        stages.Add(new StageNode { floor = 8, type = StageType.Boss, power = 5, giveHex = true });
     }
 
     private void BuildCompDefs()
@@ -558,6 +567,36 @@ public partial class RoguelikeFramework : MonoBehaviour
             bonusDmg = 0.08f,
             bonusReduction = 0.10f,
             bonusSpeed = 1
+        });
+        compDefs.Add(new CompDef
+        {
+            id = "holy_guard",
+            name = "圣卫铁壁",
+            desc = "守护者和先锋构筑前排要塞",
+            focusClasses = new[] { "Guardian", "Vanguard" },
+            focusOrigins = new[] { "Holy", "Stone", "Steel" },
+            classA = "Guardian",
+            classB = "Vanguard",
+            needClass2A = 2,
+            needClass2B = 2,
+            bonusDmg = 0.05f,
+            bonusReduction = 0.16f,
+            bonusSpeed = 0
+        });
+        compDefs.Add(new CompDef
+        {
+            id = "frost_sniper",
+            name = "霜影炮狙",
+            desc = "寒晶炮和狙击炮压制后排",
+            focusClasses = new[] { "Artillery", "Assassin" },
+            focusOrigins = new[] { "Frost", "Shadow", "Mist" },
+            classA = "Artillery",
+            classB = "Assassin",
+            needClass2A = 2,
+            needClass2B = 2,
+            bonusDmg = 0.14f,
+            bonusReduction = 0.02f,
+            bonusSpeed = 2
         });
     }
 
@@ -1026,6 +1065,21 @@ public partial class RoguelikeFramework : MonoBehaviour
         return c;
     }
 
+    private int CountOwnedCopies(string key, int star)
+    {
+        int c = 0;
+        for (int i = 0; i < benchUnits.Count; i++) if (benchUnits[i].def.key == key && benchUnits[i].star == star) c++;
+        for (int i = 0; i < deploySlots.Count; i++) if (deploySlots[i].def.key == key && deploySlots[i].star == star) c++;
+        return c;
+    }
+
+    private bool CanBuyOfferNow(string key)
+    {
+        if (benchUnits.Count < 8) return true;
+        // 备战席满时，若买入后可立即触发合成，则允许购买（与金铲铲体验对齐）
+        return CountOwnedCopies(key, 1) >= 2;
+    }
+
     private float[] GetShopCostOddsByLevel()
     {
         int lv = Mathf.Clamp(playerLevel, 1, 8);
@@ -1069,7 +1123,7 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         var def = unitDefs[key];
         if (gold < def.cost) { battleLog = $"金币不足（需要{def.cost}）"; return; }
-        if (benchUnits.Count >= 8) { battleLog = "备战席已满"; return; }
+        if (!CanBuyOfferNow(key)) { battleLog = "备战席已满"; return; }
 
         gold -= def.cost;
         benchUnits.Add(CreateUnit(key, true));
@@ -1105,29 +1159,45 @@ public partial class RoguelikeFramework : MonoBehaviour
                 {
                     if (kv.Value.Count < 3) continue;
 
-                    int removed = 0;
-                    for (int i = benchUnits.Count - 1; i >= 0 && removed < 3; i--)
+                    var mergeGroup = kv.Value.GetRange(0, 3);
+                    Unit anchor = null;
+                    for (int i = 0; i < mergeGroup.Count; i++)
                     {
-                        if (benchUnits[i].def.key == kv.Key && benchUnits[i].star == fromStar)
+                        var cand = mergeGroup[i];
+                        if (deploySlots.Exists(x => x.id == cand.id))
                         {
-                            benchUnits.RemoveAt(i);
-                            removed++;
+                            anchor = cand;
+                            break;
                         }
                     }
-                    for (int i = deploySlots.Count - 1; i >= 0 && removed < 3; i--)
+                    if (anchor == null) anchor = mergeGroup[0];
+
+                    for (int i = 0; i < mergeGroup.Count; i++)
                     {
-                        if (deploySlots[i].def.key == kv.Key && deploySlots[i].star == fromStar)
-                        {
-                            deploySlots.RemoveAt(i);
-                            removed++;
-                        }
+                        var rm = mergeGroup[i];
+                        int bi = benchUnits.FindIndex(x => x.id == rm.id);
+                        if (bi >= 0) { benchUnits.RemoveAt(bi); continue; }
+                        int di = deploySlots.FindIndex(x => x.id == rm.id);
+                        if (di >= 0) deploySlots.RemoveAt(di);
                     }
 
                     var up = CreateUnit(kv.Key, true);
                     for (int s = 1; s <= fromStar; s++) UpgradeUnit(up);
                     up.star = Mathf.Clamp(fromStar + 1, 1, 3);
 
-                    benchUnits.Add(up);
+                    bool anchorOnBoard = anchor.x >= 0 && anchor.y >= 0;
+                    if (anchorOnBoard)
+                    {
+                        up.x = anchor.x;
+                        up.y = anchor.y;
+                        deploySlots.Add(up);
+                    }
+                    else
+                    {
+                        up.x = -1;
+                        up.y = -1;
+                        benchUnits.Add(up);
+                    }
                     battleLog = fromStar == 1
                         ? $"合成成功：{up.Name} 升为2星"
                         : $"超级合成：{up.Name} 升为3星";
@@ -1178,7 +1248,8 @@ public partial class RoguelikeFramework : MonoBehaviour
         int deployIdx = deploySlots.FindIndex(x => x.id == u.id);
         if (benchIdx < 0 && deployIdx < 0) return false;
 
-        int sellGold = Mathf.Max(1, u.def.cost);
+        int copyCount = u.star == 1 ? 1 : u.star == 2 ? 3 : 9;
+        int sellGold = Mathf.Max(1, u.def.cost * copyCount);
         gold += sellGold;
 
         if (benchIdx >= 0) benchUnits.RemoveAt(benchIdx);
@@ -1284,8 +1355,11 @@ public partial class RoguelikeFramework : MonoBehaviour
             "Thunder" => "雷霆",
             "Night" => "夜幕",
             "Stone" => "岩石",
+            "Holy" => "圣辉",
+            "Frost" => "霜寒",
             "Wind" => "疾风",
             "Venom" => "毒蚀",
+            "Mist" => "雾隐",
             _ => originTag
         };
     }
@@ -1298,6 +1372,9 @@ public partial class RoguelikeFramework : MonoBehaviour
             "Rider" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位速度 +2 / +5，首击突进更强",
             "Artillery" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位伤害 +12% / +22%，4层额外射程+1",
             "Assassin" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位暴击率 +20% / +45%，暴击伤害 +35%",
+            "Guardian" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位减伤 +12% / +24%，并提供全队小额护卫减伤",
+            "Soldier" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位普攻伤害 +10% / +22%",
+            "Leader" => $"{GetClassCn(classTag)}：1生效，当前{count}。效果：全队伤害与速度小幅提升",
             _ => $"{GetClassCn(classTag)}：当前{count}"
         };
     }
@@ -1312,8 +1389,11 @@ public partial class RoguelikeFramework : MonoBehaviour
             "Thunder" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位速度 +2 / +4",
             "Night" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：首次爆发伤害增强",
             "Stone" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位减伤 +6% / +14%",
+            "Holy" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位命中后小幅回血",
+            "Frost" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：命中时削减目标速度",
             "Wind" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位速度 +2 / +4",
             "Venom" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：命中附加额外伤害",
+            "Mist" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：受击时有概率闪避",
             _ => $"{GetOriginCn(originTag)}：当前{count}"
         };
     }
@@ -1351,32 +1431,28 @@ public partial class RoguelikeFramework : MonoBehaviour
 
     private string GetSynergySummary(List<Unit> team)
     {
-        int v = CountClass(team, "Vanguard");
-        int r = CountClass(team, "Rider");
-        int a = CountClass(team, "Artillery");
-        int ass = CountClass(team, "Assassin");
-        int steel = CountOrigin(team, "Steel");
-        int blaze = CountOrigin(team, "Blaze");
-        int shadow = CountOrigin(team, "Shadow");
-        int thunder = CountOrigin(team, "Thunder");
-        int stone = CountOrigin(team, "Stone");
-        int night = CountOrigin(team, "Night");
-        int wind = CountOrigin(team, "Wind");
-        int venom = CountOrigin(team, "Venom");
-
         string summary = "";
-        if (v >= 2) summary += $"钢铁先锋({v}) ";
-        if (r >= 2) summary += $"机动骑兵({r}) ";
-        if (a >= 2) summary += $"火力炮阵({a}) ";
-        if (ass >= 2) summary += $"暗影刺客({ass}) ";
-        if (steel >= 2) summary += $"钢铁源({steel}) ";
-        if (blaze >= 2) summary += $"烈焰源({blaze}) ";
-        if (shadow >= 2) summary += $"暗影源({shadow}) ";
-        if (thunder >= 2) summary += $"雷霆源({thunder}) ";
-        if (stone >= 2) summary += $"岩石源({stone}) ";
-        if (night >= 2) summary += $"夜幕源({night}) ";
-        if (wind >= 2) summary += $"疾风源({wind}) ";
-        if (venom >= 2) summary += $"毒蚀源({venom}) ";
+        var classCount = new Dictionary<string, int>();
+        var originCount = new Dictionary<string, int>();
+        for (int i = 0; i < team.Count; i++)
+        {
+            var u = team[i];
+            if (u == null) continue;
+            if (!classCount.ContainsKey(u.ClassTag)) classCount[u.ClassTag] = 0;
+            if (!originCount.ContainsKey(u.OriginTag)) originCount[u.OriginTag] = 0;
+            classCount[u.ClassTag]++;
+            originCount[u.OriginTag]++;
+        }
+
+        foreach (var kv in classCount)
+        {
+            int need = kv.Key == "Leader" ? 1 : 2;
+            if (kv.Value >= need) summary += $"{GetClassCn(kv.Key)}({kv.Value}) ";
+        }
+        foreach (var kv in originCount)
+        {
+            if (kv.Value >= 2) summary += $"{GetOriginCn(kv.Key)}源({kv.Value}) ";
+        }
         if (string.IsNullOrEmpty(summary)) summary = "暂无激活羁绊";
         return summary;
     }
@@ -1460,6 +1536,9 @@ public partial class RoguelikeFramework : MonoBehaviour
         int r = CountClass(team, "Rider");
         int a = CountClass(team, "Artillery");
         int ass = CountClass(team, "Assassin");
+        int g = CountClass(team, "Guardian");
+        int s = CountClass(team, "Soldier");
+        int l = CountClass(team, "Leader");
         if (v >= 2) score += 40;
         if (v >= 4) score += 70;
         if (r >= 2) score += 35;
@@ -1468,6 +1547,11 @@ public partial class RoguelikeFramework : MonoBehaviour
         if (a >= 4) score += 72;
         if (ass >= 2) score += 36;
         if (ass >= 4) score += 68;
+        if (g >= 2) score += 30;
+        if (g >= 4) score += 58;
+        if (s >= 2) score += 26;
+        if (s >= 4) score += 52;
+        if (l >= 1) score += 22;
         return score;
     }
 
@@ -1501,11 +1585,28 @@ public partial class RoguelikeFramework : MonoBehaviour
         if (HasHex("execution_edge")) m += 0.04f;
         m += GetLockedCompDamageBonus(from);
 
+        int soldier = CountClass(team, "Soldier");
+        if (from.ClassTag == "Soldier")
+        {
+            if (soldier >= 2) m += 0.10f;
+            if (soldier >= 4) m += 0.22f;
+        }
+
+        int leader = CountClass(team, "Leader");
+        if (leader >= 1) m += 0.06f;
+        if (from.ClassTag == "Leader") m += 0.10f;
+
         int blaze = CountOrigin(team, "Blaze");
         if (from.OriginTag == "Blaze")
         {
             if (blaze >= 2) m += 0.10f;
             if (blaze >= 4) m += 0.20f;
+        }
+        int frost = CountOrigin(team, "Frost");
+        if (from.OriginTag == "Frost")
+        {
+            if (frost >= 2) m += 0.08f;
+            if (frost >= 4) m += 0.18f;
         }
         int venom = CountOrigin(team, "Venom");
         if (from.OriginTag == "Venom")
@@ -1543,6 +1644,7 @@ public partial class RoguelikeFramework : MonoBehaviour
             if (wind >= 4) b += 4;
             if (HasHex("windwalk")) b += 2;
         }
+        if (CountClass(team, "Leader") >= 1) b += 1;
         b += GetLockedCompSpeedBonus(u);
         return b;
     }
@@ -1568,6 +1670,13 @@ public partial class RoguelikeFramework : MonoBehaviour
             if (van >= 4) r += 0.22f;
             if (HasHex("vanguard_wall")) r += 0.18f;
         }
+        int guardian = CountClass(team, "Guardian");
+        if (u.ClassTag == "Guardian")
+        {
+            if (guardian >= 2) r += 0.12f;
+            if (guardian >= 4) r += 0.24f;
+        }
+        if (guardian >= 2) r += 0.04f;
 
         int steel = CountOrigin(team, "Steel");
         if (u.OriginTag == "Steel")
@@ -1581,6 +1690,12 @@ public partial class RoguelikeFramework : MonoBehaviour
             if (stone >= 2) r += 0.06f;
             if (stone >= 4) r += 0.14f;
             if (HasHex("stone_oath")) r += 0.08f;
+        }
+        int mist = CountOrigin(team, "Mist");
+        if (u.OriginTag == "Mist")
+        {
+            if (mist >= 2) r += 0.03f;
+            if (mist >= 4) r += 0.08f;
         }
         if (u.ClassTag == "Vanguard" && HasHex("vanguard_bastion")) r += 0.08f;
         r += GetLockedCompReductionBonus(u);
@@ -1652,6 +1767,15 @@ public partial class RoguelikeFramework : MonoBehaviour
             {
                 int extra = Mathf.RoundToInt(target.maxHp * (venom >= 4 ? 0.06f : 0.04f));
                 dmg += Mathf.Max(2, extra);
+            }
+        }
+        if (actor.OriginTag == "Frost")
+        {
+            int frost = CountOrigin(actor.player ? playerUnits : enemyUnits, "Frost");
+            if (frost >= 2 && target.spd > 3)
+            {
+                int down = frost >= 4 ? 2 : 1;
+                target.spd = Mathf.Max(3, target.spd - down);
             }
         }
 
@@ -1764,6 +1888,12 @@ public partial class RoguelikeFramework : MonoBehaviour
             if (HasHex("windwalk")) dodge += 0.06f;
             if (UnityEngine.Random.value < dodge) return 0;
         }
+        if (to.OriginTag == "Mist")
+        {
+            int mist = CountOrigin(to.player ? playerUnits : enemyUnits, "Mist");
+            float dodge = mist >= 4 ? 0.20f : mist >= 2 ? 0.12f : 0f;
+            if (UnityEngine.Random.value < dodge) return 0;
+        }
 
         float reduction = GetDamageReduction(to);
         dmg = Mathf.Max(1, Mathf.RoundToInt(dmg * (1f - reduction)));
@@ -1780,6 +1910,16 @@ public partial class RoguelikeFramework : MonoBehaviour
         {
             int heal = Mathf.Max(1, Mathf.RoundToInt(dmg * 0.12f));
             from.hp = Mathf.Min(from.maxHp, from.hp + heal);
+        }
+        if (from.OriginTag == "Holy" && from.Alive && dmg > 0)
+        {
+            int holy = CountOrigin(from.player ? playerUnits : enemyUnits, "Holy");
+            float ratio = holy >= 4 ? 0.12f : holy >= 2 ? 0.06f : 0f;
+            if (ratio > 0f)
+            {
+                int heal = Mathf.Max(1, Mathf.RoundToInt(dmg * ratio));
+                from.hp = Mathf.Min(from.maxHp, from.hp + heal);
+            }
         }
         if (killed && from.player && HasHex("assassin_contract") && from.ClassTag == "Assassin")
         {
@@ -2003,6 +2143,17 @@ public partial class RoguelikeFramework : MonoBehaviour
         return shieldIcon;
     }
 
+    private Texture2D PickIcon(UnitDef d)
+    {
+        if (d != null && unitTextures.TryGetValue(d.key, out var tex) && tex != null) return tex;
+        if (d == null) return shieldIcon;
+        if (d.family == "帅") return dragonIcon ?? shieldIcon;
+        if (d.family == "马") return horseIcon;
+        if (d.family == "炮") return bombIcon;
+        if (d.family == "车" || d.family == "兵") return swordIcon;
+        return shieldIcon;
+    }
+
     private Color PickVariantTint(Unit u)
     {
         // 同家族不同变体做视觉区分，并叠加敌我主色调
@@ -2107,7 +2258,8 @@ public partial class RoguelikeFramework : MonoBehaviour
         Vector3 uy = cam.WorldToScreenPoint(GridToWorld(x, y) + new Vector3(0f, 0.48f, 0f));
         float w = Mathf.Abs(rx.x - c.x) * 2f;
         float h = Mathf.Abs(uy.y - c.y) * 2f;
-        return new Rect(c.x - w * 0.5f, (Screen.height - c.y) - h * 0.5f, w, h);
+        float s = Mathf.Max(0.01f, uiScale);
+        return new Rect((c.x - w * 0.5f) / s, ((Screen.height - c.y) - h * 0.5f) / s, w / s, h / s);
     }
 
     private void RedrawPrepareBoard()
@@ -2161,9 +2313,11 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         int deployCols = 5;
         int deployRows = H;
+        float s = Mathf.Max(0.01f, uiScale);
+        float guiH = Screen.height / s;
 
         float panelX = 16f;
-        float panelY = Screen.height - 170f;
+        float panelY = guiH - 170f;
         float benchX = panelX + 16f;
         float benchY = panelY + 88f;
         float benchSlotW = 90f;
@@ -2178,8 +2332,8 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         Vector2 GetGridAtMouse()
         {
-            float mx = Input.mousePosition.x;
-            float myGui = Screen.height - Input.mousePosition.y;
+            float mx = Input.mousePosition.x / s;
+            float myGui = guiH - (Input.mousePosition.y / s);
 
             for (int r = 0; r < deployRows; r++)
             {
@@ -2269,7 +2423,20 @@ public partial class RoguelikeFramework : MonoBehaviour
             {
                 if (draggingDeploy >= 0 && draggingDeploy < benchUnits.Count)
                 {
-                    if (targetDeployIdx >= 0) battleLog = "目标格已有棋子";
+                    if (targetDeployIdx >= 0)
+                    {
+                        // 备战席 -> 棋盘：支持直接替换
+                        var benchUnit = benchUnits[draggingDeploy];
+                        var boardUnit = deploySlots[targetDeployIdx];
+                        benchUnit.x = tx;
+                        benchUnit.y = ty;
+                        boardUnit.x = -1;
+                        boardUnit.y = -1;
+                        deploySlots[targetDeployIdx] = benchUnit;
+                        benchUnits[draggingDeploy] = boardUnit;
+                        AutoMergeAll();
+                        RedrawPrepareBoard();
+                    }
                     else if (deploySlots.Count >= GetBoardCap()) battleLog = $"上阵已满（上限{GetBoardCap()}）";
                     else
                     {
@@ -2374,8 +2541,11 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         float w = 460f;
         float h = 220f;
-        float x = Mathf.Clamp(tooltipPos.x, 10f, Screen.width - w - 10f);
-        float y = Mathf.Clamp(tooltipPos.y, 10f, Screen.height - h - 10f);
+        float s = Mathf.Max(0.01f, uiScale);
+        float guiW = Screen.width / s;
+        float guiH = Screen.height / s;
+        float x = Mathf.Clamp(tooltipPos.x / s, 10f, guiW - w - 10f);
+        float y = Mathf.Clamp(tooltipPos.y / s, 10f, guiH - h - 10f);
 
         // 阴影
         Color old = GUI.color;
@@ -2492,8 +2662,9 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         float bx = x + 10f;
         float by = y + 26f;
-        float cardW = 132f;
-        float cardH = 66f;
+        bool compactTrait = w < 360f || h < 210f;
+        float cardW = compactTrait ? 118f : 132f;
+        float cardH = compactTrait ? 56f : 66f;
         int cols = Mathf.Max(1, Mathf.FloorToInt((w - 20f) / (cardW + 6f)));
         Vector2 mp = Event.current.mousePosition;
         int idx = 0;
@@ -2551,11 +2722,17 @@ public partial class RoguelikeFramework : MonoBehaviour
             }
         };
 
-        for (int i = 0; i < classes.Count; i++) DrawTraitCard(classes[i], true);
-        for (int i = 0; i < origins.Count; i++) DrawTraitCard(origins[i], false);
+        int maxRows = Mathf.Max(1, Mathf.FloorToInt((h - 34f) / (cardH + 6f)));
+        int maxCards = cols * maxRows;
+        int shown = 0;
+        for (int i = 0; i < classes.Count && shown < maxCards; i++, shown++) DrawTraitCard(classes[i], true);
+        for (int i = 0; i < origins.Count && shown < maxCards; i++, shown++) DrawTraitCard(origins[i], false);
 
         float legendY = by + Mathf.Ceil(idx / (float)cols) * (cardH + 6f) + 2f;
-        GUI.Label(new Rect(x + 12, legendY, w - 24, 20), "颜色：灰=未激活 蓝=2阶 金=4阶");
+        if (legendY < y + h - 18f)
+        {
+            GUI.Label(new Rect(x + 12, legendY, w - 24, 20), "颜色：灰=未激活 蓝=2阶 金=4阶");
+        }
     }
 
     private void DrawSelectedHexPanel(float x, float y, float w, float h)
@@ -2767,6 +2944,8 @@ public partial class RoguelikeFramework : MonoBehaviour
         titleStyle = new GUIStyle(GUI.skin.label);
         wrapLabelStyle = new GUIStyle(GUI.skin.label);
         hudStatStyle = new GUIStyle(GUI.skin.label);
+        chipTitleStyle = new GUIStyle(GUI.skin.label);
+        chipMetaStyle = new GUIStyle(GUI.skin.label);
 
         // 统一深蓝铜色主题：提高层次感和信息可读性
         flatPanelTex = CreateFlatTexture(new Color(0.05f, 0.09f, 0.14f, 0.92f));
@@ -2785,7 +2964,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         boxStyle.hover.textColor = boxStyle.normal.textColor;
         boxStyle.active.textColor = boxStyle.normal.textColor;
         boxStyle.focused.textColor = boxStyle.normal.textColor;
-        boxStyle.fontSize = 14;
+        boxStyle.fontSize = 16;
 
         // 交互按钮统一使用深色底，保障所有文案可读性
         buttonStyle.normal.background = flatButtonTex;
@@ -2793,7 +2972,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         buttonStyle.active.background = flatButtonActiveTex;
         buttonStyle.focused.background = flatButtonHoverTex;
         buttonStyle.fontStyle = FontStyle.Bold;
-        buttonStyle.fontSize = 14;
+        buttonStyle.fontSize = 16;
         buttonStyle.normal.textColor = Color.white;
         buttonStyle.hover.textColor = Color.white;
         buttonStyle.active.textColor = new Color(0.95f, 0.98f, 1f);
@@ -2804,32 +2983,80 @@ public partial class RoguelikeFramework : MonoBehaviour
         labelStyle.hover.textColor = labelStyle.normal.textColor;
         labelStyle.active.textColor = labelStyle.normal.textColor;
         labelStyle.focused.textColor = labelStyle.normal.textColor;
-        labelStyle.fontSize = 14;
+        labelStyle.fontSize = 16;
         labelStyle.wordWrap = false;
         labelStyle.richText = true;
+        labelStyle.clipping = TextClipping.Overflow;
 
         wrapLabelStyle.normal.textColor = labelStyle.normal.textColor;
         wrapLabelStyle.hover.textColor = labelStyle.normal.textColor;
         wrapLabelStyle.active.textColor = labelStyle.normal.textColor;
         wrapLabelStyle.focused.textColor = labelStyle.normal.textColor;
-        wrapLabelStyle.fontSize = 14;
+        wrapLabelStyle.fontSize = 16;
         wrapLabelStyle.wordWrap = true;
         wrapLabelStyle.richText = true;
+        wrapLabelStyle.clipping = TextClipping.Overflow;
 
         hudStatStyle.normal.textColor = new Color(0.98f, 0.98f, 1f);
         hudStatStyle.hover.textColor = hudStatStyle.normal.textColor;
         hudStatStyle.active.textColor = hudStatStyle.normal.textColor;
         hudStatStyle.focused.textColor = hudStatStyle.normal.textColor;
-        hudStatStyle.fontSize = 18;
+        hudStatStyle.fontSize = 20;
         hudStatStyle.fontStyle = FontStyle.Bold;
         hudStatStyle.alignment = TextAnchor.MiddleLeft;
         hudStatStyle.richText = true;
 
         titleStyle.normal.textColor = Color.white;
         titleStyle.fontStyle = FontStyle.Bold;
-        titleStyle.fontSize = 18;
+        titleStyle.fontSize = 22;
+
+        chipTitleStyle.normal.textColor = Color.white;
+        chipTitleStyle.fontSize = 13;
+        chipTitleStyle.fontStyle = FontStyle.Bold;
+        chipTitleStyle.wordWrap = false;
+        chipTitleStyle.clipping = TextClipping.Clip;
+
+        chipMetaStyle.normal.textColor = new Color(0.86f, 0.93f, 1f);
+        chipMetaStyle.fontSize = 11;
+        chipMetaStyle.wordWrap = false;
+        chipMetaStyle.clipping = TextClipping.Clip;
 
         stylesReady = true;
+    }
+
+    private void DrawUnitChipCard(Rect r, UnitDef def, int star, int cost, bool showCost)
+    {
+        if (def == null) return;
+        bool compact = r.width <= 96f;
+        string Cut(string text, int maxLen)
+        {
+            if (string.IsNullOrEmpty(text) || text.Length <= maxLen) return text;
+            return text.Substring(0, Mathf.Max(1, maxLen - 1)) + "…";
+        }
+        Color old = GUI.color;
+        GUI.color = GetUnitChipColorByClass(def.classTag);
+        GUI.DrawTexture(r, Texture2D.whiteTexture);
+        GUI.color = new Color(0.08f, 0.11f, 0.16f, 0.95f);
+        GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height - 4), Texture2D.whiteTexture);
+
+        var icon = PickIcon(def);
+        float iconW = compact ? 28f : 34f;
+        GUI.color = new Color(0.15f, 0.22f, 0.34f, 0.95f);
+        GUI.DrawTexture(new Rect(r.x + 4, r.y + 5, iconW, iconW), Texture2D.whiteTexture);
+        GUI.color = Color.white;
+        if (icon != null) GUI.DrawTexture(new Rect(r.x + 4, r.y + 5, iconW, iconW), icon, ScaleMode.ScaleToFit, true);
+        else GUI.Label(new Rect(r.x + 7, r.y + 11, iconW - 4, 16), "?", chipTitleStyle);
+
+        GUI.color = Color.white;
+        float tx = compact ? r.x + 34f : r.x + 42f;
+        float tw = r.width - (compact ? 36f : 44f);
+        string cls = GetClassCn(def.classTag).Replace("钢铁", "").Replace("机动", "").Replace("火力", "").Replace("暗影", "");
+        string traitText = compact ? $"{cls}/{GetOriginCn(def.originTag)}" : $"{GetClassCn(def.classTag)} / {GetOriginCn(def.originTag)}";
+        GUI.Label(new Rect(tx, r.y + 2, tw, 16), Cut(def.name, compact ? 4 : 8), chipTitleStyle);
+        GUI.Label(new Rect(tx, r.y + 19, tw, 14), Cut(traitText, compact ? 8 : 14), chipMetaStyle);
+        GUI.Label(new Rect(tx, r.y + 34, 70, 14), $"{star}★", chipMetaStyle);
+        if (showCost) GUI.Label(new Rect(r.x + r.width - 44, r.y + 34, 40, 14), $"{cost}金", chipMetaStyle);
+        GUI.color = old;
     }
 
     private void OnGUI()
@@ -2840,27 +3067,36 @@ public partial class RoguelikeFramework : MonoBehaviour
         var oldButton = GUI.skin.button;
         var oldLabel = GUI.skin.label;
         var oldColor = GUI.color;
+        var oldMatrix = GUI.matrix;
         GUI.skin.box = boxStyle;
         GUI.skin.button = buttonStyle;
         GUI.skin.label = labelStyle;
 
-        float leftW = 350f;
-        float rightW = 430f;
+        uiScale = Mathf.Clamp(Screen.height / 900f, 1.25f, 2f);
+        GUI.matrix = Matrix4x4.Scale(new Vector3(uiScale, uiScale, 1f));
+        float guiW = Screen.width / uiScale;
+        float guiH = Screen.height / uiScale;
+        bool compact = guiW < 1480f;
+        // Windowed mode on macOS can overlap IMGUI top rows with title bar.
+        float topPad = Screen.fullScreen ? 10f : 30f;
+
+        float leftW = compact ? 300f : 350f;
+        float rightW = compact ? 360f : 430f;
         float centerX = leftW + 20f;
-        float centerW = Mathf.Max(360f, Screen.width - leftW - rightW - 36f);
-        float rightX = Screen.width - rightW - 16f;
+        float centerW = Mathf.Max(360f, guiW - leftW - rightW - 36f);
+        float rightX = guiW - rightW - 16f;
 
         string topInfo = $"生命:{playerLife}  连胜:{winStreak} 连败:{loseStreak}  关卡:{Mathf.Min(stageIndex + 1, stages.Count)}/{stages.Count}";
-        GUI.Box(new Rect(16, 12, Screen.width - 32f, 104f), "");
-        GUI.Label(new Rect(30, 16, 680, 22), "龙棋传说 | 中国象棋 x 自走棋 x 海克斯构筑", titleStyle);
-        GUI.Label(new Rect(30, 42, 720, 20), topInfo);
-        GUI.Label(new Rect(30, 66, Screen.width - 430f, 34), $"战报：{battleLog}", wrapLabelStyle);
+        GUI.Box(new Rect(16, 16 + topPad, guiW - 32f, 112f), "");
+        GUI.Label(new Rect(30, 24 + topPad, 740, 30), "龙棋传说 | 中国象棋 x 自走棋 x 海克斯构筑", titleStyle);
+        GUI.Label(new Rect(30, 50 + topPad, 760, 22), topInfo);
+        GUI.Label(new Rect(30, 76 + topPad, guiW - 430f, 38), $"战报：{battleLog}", wrapLabelStyle);
         if (recentEvents.Count > 0)
         {
-            GUI.Box(new Rect(16, 116, leftW, 92), "战报事件");
+            GUI.Box(new Rect(16, 130 + topPad, leftW, 92), "战报事件");
             for (int i = 0; i < recentEvents.Count && i < 4; i++)
             {
-                GUI.Label(new Rect(26, 132 + i * 18, 360, 18), recentEvents[recentEvents.Count - 1 - i]);
+                GUI.Label(new Rect(26, 146 + topPad + i * 18, 360, 18), recentEvents[recentEvents.Count - 1 - i]);
             }
         }
 
@@ -2874,44 +3110,44 @@ public partial class RoguelikeFramework : MonoBehaviour
             RunState.GameOver => "章节结束",
             _ => "状态未知"
         };
-        GUI.Box(new Rect(rightX, 12, rightW, 48), $"当前状态：{stateText}");
-        GUI.Box(new Rect(rightX, 62, rightW, 46), "情报提示：点击棋子或羁绊卡片查看详细说明");
+        GUI.Box(new Rect(rightX, 16 + topPad, rightW, 48), $"当前状态：{stateText}");
+        GUI.Box(new Rect(rightX, 70 + topPad, rightW, 46), "情报提示：点击棋子或羁绊卡片查看详细说明");
 
-        if (GUI.Button(new Rect(Screen.width - 126, 14, 108, 28), showDevTools ? "收起开发" : "开发工具"))
+        if (GUI.Button(new Rect(guiW - 126, 14 + topPad, 108, 28), showDevTools ? "收起开发" : "开发工具"))
         {
             showDevTools = !showDevTools;
         }
             if (showDevTools)
             {
-            GUI.Box(new Rect(centerX, 12, 300, 78), $"屏幕:{Screen.width}x{Screen.height}\nDPI:{Mathf.RoundToInt(Screen.dpi)}\nPath:{devPersistentPath}\nAutoRun:{devAutoRunStatus}");
-            if (GUI.Button(new Rect(centerX + 310f, 14, 118, 28), "开发推进一步"))
+            GUI.Box(new Rect(centerX, 12 + topPad, 300, 78), $"屏幕:{Screen.width}x{Screen.height}\nDPI:{Mathf.RoundToInt(Screen.dpi)}\nPath:{devPersistentPath}\nAutoRun:{devAutoRunStatus}");
+            if (GUI.Button(new Rect(centerX + 310f, 14 + topPad, 118, 28), "开发推进一步"))
             {
                 DevAdvanceOneStep();
             }
-            if (GUI.Button(new Rect(centerX + 310f, 46, 118, 28), "开发重开"))
+            if (GUI.Button(new Rect(centerX + 310f, 46 + topPad, 118, 28), "开发重开"))
             {
                 RestartRun();
             }
-            if (GUI.Button(new Rect(centerX + 434f, 14, 124, 60), "自动回归3关"))
+            if (GUI.Button(new Rect(centerX + 434f, 14 + topPad, 124, 60), "自动回归3关"))
             {
                 DevRunRegression3Floors();
             }
-            if (GUI.Button(new Rect(centerX + 434f, 78, 124, 28), "平衡测试50轮"))
+            if (GUI.Button(new Rect(centerX + 434f, 78 + topPad, 124, 28), "平衡测试50轮"))
             {
                 DevRunBalanceIterations(50);
             }
-            if (GUI.Button(new Rect(centerX + 560f, 78, 124, 28), "平衡测试100轮"))
+            if (GUI.Button(new Rect(centerX + 560f, 78 + topPad, 124, 28), "平衡测试100轮"))
             {
                 DevRunBalanceIterations(100);
             }
-            if (GUI.Button(new Rect(Screen.width - 126, 46, 108, 28), "调试+999金"))
+            if (GUI.Button(new Rect(guiW - 126, 46 + topPad, 108, 28), "调试+999金"))
             {
                 gold += 999;
                 battleLog = "作弊生效：金币 +999";
             }
         }
 
-        DrawSelectedHexPanel(centerX, 116, centerW, 104);
+        DrawSelectedHexPanel(centerX, 130 + topPad, centerW, 104);
 
         if (state == RunState.Stage)
         {
@@ -2934,8 +3170,10 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         if (state == RunState.Prepare)
         {
-            GUI.Box(new Rect(16, 220, leftW, 64), $"准备阶段：直接拖拽到战场左侧5列布阵 | 羁绊：{GetSynergySummary(deploySlots)}");
-            GUI.Label(new Rect(24, 254, leftW - 22, 20), $"当前阵容评分: {GetCompPowerScore(deploySlots)}");
+            GUI.Box(new Rect(16, 220, leftW, 78), "");
+            GUI.Label(new Rect(24, 228, leftW - 20, 20), "准备阶段：拖拽棋子到战场左侧5列布阵");
+            GUI.Label(new Rect(24, 250, leftW - 20, 20), $"羁绊：{GetSynergySummary(deploySlots)}");
+            GUI.Label(new Rect(24, 272, leftW - 20, 20), $"阵容评分：{GetCompPowerScore(deploySlots)}");
 
             for (int y = 0; y < H; y++)
             {
@@ -2968,41 +3206,56 @@ public partial class RoguelikeFramework : MonoBehaviour
             }
 
             float panelX = 16f;
-            float panelY = Screen.height - 204f;
-            float panelW = Screen.width - 32f;
-            GUI.Box(new Rect(panelX, panelY, panelW, 188f), "准备阶段");
+            float panelY = guiH - 212f;
+            float panelW = guiW - 32f;
+            GUI.Box(new Rect(panelX, panelY, panelW, 196f), "准备阶段");
 
             GUI.Label(new Rect(panelX + 14, panelY + 8, 220, 28), $"<size=19><b>金币 {gold}</b></size>", hudStatStyle);
             GUI.Label(new Rect(panelX + 190, panelY + 8, 260, 28), $"<size=19><b>经验 {exp}/{ExpNeed(playerLevel)}</b></size>", hudStatStyle);
             GUI.Label(new Rect(panelX + 430, panelY + 8, 240, 28), $"<size=19><b>上阵上限 {GetBoardCap()}</b></size>", hudStatStyle);
 
             GUI.Label(new Rect(panelX + 16, panelY + 34, 220, 20), "商店（费用分层已接入）");
+            int shopCols = compact ? 3 : 5;
+            float shopW = compact ? 152f : 136f;
+            float shopH = compact ? 62f : 54f;
+            float shopGapX = 8f;
+            float shopGapY = 6f;
             for (int i = 0; i < shopOffers.Count; i++)
             {
                 var d = unitDefs[shopOffers[i]];
-                Rect r = new Rect(panelX + 16 + i * 110, panelY + 54, 104, 45);
-
-                Color old = GUI.color;
-                // 商店与备战席保持同一职业配色，避免同棋子颜色不一致
-                GUI.color = GetUnitChipColorByClass(d.classTag);
-
-                if (GUI.Button(r, $"{d.name}\n{d.cost}金")) BuyOffer(i);
-                GUI.color = old;
+                int row = i / shopCols;
+                int col = i % shopCols;
+                Rect r = new Rect(panelX + 16 + col * (shopW + shopGapX), panelY + 54 + row * (shopH + shopGapY), shopW, shopH);
+                if (CountOwnedCopies(d.key) > 0)
+                {
+                    float pulse = 0.45f + 0.55f * Mathf.PingPong(Time.realtimeSinceStartup * 2.2f, 1f);
+                    Color oc = GUI.color;
+                    GUI.color = new Color(1f, 0.92f, 0.35f, 0.38f * pulse);
+                    GUI.DrawTexture(new Rect(r.x - 3, r.y - 3, r.width + 6, r.height + 6), Texture2D.whiteTexture);
+                    GUI.color = oc;
+                }
+                DrawUnitChipCard(r, d, 1, d.cost, true);
+                if (CountOwnedCopies(d.key) > 0)
+                {
+                    GUI.Label(new Rect(r.x + r.width - 30, r.y + 2, 26, 16), "目标", chipMetaStyle);
+                }
+                if (GUI.Button(r, GUIContent.none, GUIStyle.none)) BuyOffer(i);
             }
-            if (GUI.Button(new Rect(panelX + 600, panelY + 58, 120, 28), "刷新(-1)")) RefreshShop();
-            if (GUI.Button(new Rect(panelX + 730, panelY + 58, 120, 28), "买经验(-4)"))
+            float shopOpsX = compact ? panelX + 510f : panelX + 740f;
+            if (GUI.Button(new Rect(shopOpsX, panelY + 58, 120, 28), "刷新(-1)")) RefreshShop();
+            if (GUI.Button(new Rect(shopOpsX + 130f, panelY + 58, 120, 28), "买经验(-4)"))
             {
                 if (gold >= 4) { gold -= 4; GainExp(4); }
             }
-            if (GUI.Button(new Rect(panelX + 860, panelY + 58, 120, 28), lockShop ? "解锁商店" : "锁定商店"))
+            if (GUI.Button(new Rect(shopOpsX + 260f, panelY + 58, 120, 28), lockShop ? "解锁商店" : "锁定商店"))
             {
                 lockShop = !lockShop;
                 battleLog = lockShop ? "已锁定商店（下回合保留）" : "已解锁商店";
             }
-            GUI.Label(new Rect(panelX + 990, panelY + 62, 170, 20), lockShop ? "状态：已锁定" : "状态：未锁定");
-            GUI.Label(new Rect(panelX + 600, panelY + 90, 560, 24), $"<size=16><b>商店概率 {GetShopOddsText()}</b></size>", hudStatStyle);
-            GUI.Label(new Rect(panelX + 600, panelY + 114, 340, 20), $"路线保底计数: {lockedCompMissStreak}/3");
-            if (GUI.Button(new Rect(panelX + 940, panelY + 108, 240, 28), "一键自动布阵（按锁定阵容）"))
+            GUI.Label(new Rect(shopOpsX + 400f, panelY + 62, 170, 20), lockShop ? "状态：已锁定" : "状态：未锁定");
+            GUI.Label(new Rect(shopOpsX, panelY + 90, 560, 24), $"<size=16><b>商店概率 {GetShopOddsText()}</b></size>", hudStatStyle);
+            GUI.Label(new Rect(shopOpsX, panelY + 114, 340, 20), $"路线保底计数: {lockedCompMissStreak}/3");
+            if (GUI.Button(new Rect(shopOpsX + 240f, panelY + 108, 240, 28), "一键自动布阵（按锁定阵容）"))
             {
                 AutoArrangeByLockedComp();
             }
@@ -3014,17 +3267,16 @@ public partial class RoguelikeFramework : MonoBehaviour
                 if (i < benchUnits.Count)
                 {
                     var u = benchUnits[i];
-                    Color oldBtn = GUI.color;
-                    GUI.color = GetUnitChipColor(u);
-                    if (GUI.Button(new Rect(bx, panelY + 126, 84, 45), $"{u.Name}\n{u.star}★"))
+                    Rect r = new Rect(bx, panelY + 126, 84, 52);
+                    DrawUnitChipCard(r, u.def, u.star, u.def.cost, false);
+                    if (GUI.Button(r, GUIContent.none, GUIStyle.none))
                     {
                         inspectedUnit = u;
                         ShowTooltip(BuildUnitTooltip(u));
                         battleLog = $"查看 {u.Name}";
                     }
-                    GUI.color = oldBtn;
                 }
-                else GUI.Box(new Rect(bx, panelY + 126, 84, 45), "");
+                else GUI.Box(new Rect(bx, panelY + 126, 84, 52), "");
             }
 
             if (GUI.Button(new Rect(panelX + panelW - 160, panelY + 136, 140, 36), "开始战斗")) StartBattle();
@@ -3049,8 +3301,11 @@ public partial class RoguelikeFramework : MonoBehaviour
                 }
             }
 
-            DrawSynergyClickPanel(rightX, 220, rightW, 230, deploySlots);
-            DrawCompPanel(rightX, 456, rightW, 230, deploySlots);
+            float syH = compact ? 210f : 230f;
+            float compY = 220f + syH + 8f;
+            float compH = Mathf.Max(170f, guiH - compY - 170f);
+            DrawSynergyClickPanel(rightX, 220, rightW, syH, deploySlots);
+            DrawCompPanel(rightX, compY, rightW, compH, deploySlots);
         }
 
         if (state == RunState.Battle)
@@ -3060,27 +3315,42 @@ public partial class RoguelikeFramework : MonoBehaviour
             int allyScore = GetCompPowerScore(playerUnits);
             int enemyScore = GetCompPowerScore(enemyUnits);
 
-            GUI.Box(new Rect(16, 220, leftW, 244),
-                $"战斗中（自动执行）\n回合速度：{speedLevel}x\n存活单位：我方 {allyAlive} / 敌方 {enemyAlive}\n阵容评分：我方 {allyScore} / 敌方 {enemyScore}\n我方羁绊：{GetSynergySummary(playerUnits)}\n\n最近战况：\n{battleLog}");
+            GUI.Box(new Rect(16, 220, leftW, 210), "战斗态势");
+            GUI.Label(new Rect(28, 246, leftW - 24, 20), $"回合速度：{speedLevel}x");
+            GUI.Label(new Rect(28, 268, leftW - 24, 20), $"存活单位：我方 {allyAlive} / 敌方 {enemyAlive}");
+            GUI.Label(new Rect(28, 290, leftW - 24, 20), $"阵容评分：我方 {allyScore} / 敌方 {enemyScore}");
+            GUI.Label(new Rect(28, 312, leftW - 24, 20), $"我方羁绊：{GetSynergySummary(playerUnits)}");
+            GUI.Label(new Rect(28, 336, leftW - 24, 20), "最近战况：");
+            GUI.Label(new Rect(28, 356, leftW - 24, 62), battleLog, wrapLabelStyle);
 
-            if (GUI.Button(new Rect(30, 416, 130, 32), "切换速度"))
+            if (GUI.Button(new Rect(30, 392, 130, 32), "切换速度"))
             {
                 if (speedLevel == 1) speedLevel = 2;
                 else if (speedLevel == 2) speedLevel = 4;
                 else speedLevel = 1;
             }
-            if (GUI.Button(new Rect(170, 416, 170, 32), showBattleStats ? "隐藏战斗统计" : "显示战斗统计"))
+            if (GUI.Button(new Rect(170, 392, 170, 32), showBattleStats ? "隐藏战斗统计" : "显示战斗统计"))
             {
                 showBattleStats = !showBattleStats;
             }
 
-            DrawSynergyClickPanel(16, 470, leftW, 120, playerUnits);
+            DrawSynergyClickPanel(16, 438, leftW, 178, playerUnits);
             for (int i = 0; i < playerUnits.Count; i++)
             {
                 var u = playerUnits[i];
                 if (!u.Alive) continue;
                 Rect cell = GetBoardCellGuiRect(u.x, u.y);
                 GUI.Label(new Rect(cell.x + 4, cell.y + 2, 26, 18), $"{u.star}★");
+            }
+            for (int i = 0; i < enemyUnits.Count; i++)
+            {
+                var u = enemyUnits[i];
+                if (!u.Alive) continue;
+                Rect cell = GetBoardCellGuiRect(u.x, u.y);
+                Color oc = GUI.color;
+                GUI.color = new Color(1f, 0.75f, 0.55f, 1f);
+                GUI.Label(new Rect(cell.x + 4, cell.y + 2, 26, 18), $"{u.star}★");
+                GUI.color = oc;
             }
 
             if (showBattleStats)
@@ -3115,8 +3385,7 @@ public partial class RoguelikeFramework : MonoBehaviour
                 if (GUI.Button(new Rect(x + 40, 400, 140, 30), "选择")) PickReward(i);
             }
 
-            if (GUI.Button(new Rect(30, 462, 170, 30), showBattleStats ? "隐藏战斗统计" : "显示战斗统计")) showBattleStats = !showBattleStats;
-            if (showBattleStats) DrawBattleStats(rightX, 170, rightW, 470);
+            // 奖励阶段聚焦选择本身，隐藏战斗统计层，避免信息干扰
         }
 
         if (state == RunState.Hex)
@@ -3182,8 +3451,8 @@ public partial class RoguelikeFramework : MonoBehaviour
             if (draggingFromBench && draggingDeploy >= 0 && draggingDeploy < benchUnits.Count) dragText = $"拖拽中：{benchUnits[draggingDeploy].Name}";
             if (!draggingFromBench && draggingDeploy >= 0 && draggingDeploy < deploySlots.Count) dragText = $"拖拽中：{deploySlots[draggingDeploy].Name}";
 
-            float mx = Input.mousePosition.x + 14f;
-            float my = Screen.height - Input.mousePosition.y + 14f;
+            float mx = Input.mousePosition.x / uiScale + 14f;
+            float my = guiH - (Input.mousePosition.y / uiScale) + 14f;
             var r = new Rect(mx, my, 170, 38);
             Color old = GUI.color;
             GUI.color = new Color(0f, 0f, 0f, 0.55f);
@@ -3200,6 +3469,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         GUI.skin.button = oldButton;
         GUI.skin.label = oldLabel;
         GUI.color = oldColor;
+        GUI.matrix = oldMatrix;
     }
 
     #endregion

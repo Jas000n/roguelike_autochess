@@ -317,7 +317,7 @@ public partial class RoguelikeFramework
             int idx = DevFindBestShopOffer(plan);
             if (idx < 0) break;
             var def = unitDefs[shopOffers[idx]];
-            if (gold < def.cost || benchUnits.Count >= 8) break;
+            if (gold < def.cost || !CanBuyOfferNow(def.key)) break;
             BuyOffer(idx);
         }
 
@@ -331,7 +331,7 @@ public partial class RoguelikeFramework
         for (int i = 0; i < shopOffers.Count; i++)
         {
             var def = unitDefs[shopOffers[i]];
-            if (gold < def.cost || benchUnits.Count >= 8) continue;
+            if (gold < def.cost || !CanBuyOfferNow(def.key)) continue;
             int score = DevScoreDefForPlan(def, plan);
             if (score > bestScore)
             {
@@ -670,7 +670,9 @@ public partial class RoguelikeFramework
 
     private void SpawnEnemiesForStage(StageNode st)
     {
-        int enemyCount = Mathf.Clamp(2 + st.power, 3, 7);
+        int enemyCount = st.type == StageType.Boss
+            ? Mathf.Clamp(1 + st.power, 4, 6)
+            : Mathf.Clamp(2 + st.power, 3, 7);
         int[,] pos = { { 7, 2 }, { 8, 1 }, { 8, 2 }, { 8, 3 }, { 9, 1 }, { 9, 2 }, { 9, 4 }, { 7, 4 } };
 
         for (int i = 0; i < enemyCount; i++)
@@ -680,15 +682,21 @@ public partial class RoguelikeFramework
 
             float hpScale = 1f + (st.power - 1) * 0.15f;
             float atkScale = 1f + (st.power - 1) * 0.11f;
+            if (st.type == StageType.Boss)
+            {
+                hpScale *= 0.88f;
+                atkScale *= 0.9f;
+            }
             u.hp = Mathf.RoundToInt(u.hp * hpScale);
             u.maxHp = u.hp;
             u.atk = Mathf.RoundToInt(u.atk * atkScale);
-            u.spd += Mathf.FloorToInt((st.power - 1) * 0.5f);
+            float spdStep = st.type == StageType.Boss ? 0.35f : 0.5f;
+            u.spd += Mathf.FloorToInt((st.power - 1) * spdStep);
 
             if (st.type == StageType.Elite || st.type == StageType.Boss || UnityEngine.Random.value < Mathf.Clamp01((st.floor - 2) * 0.12f))
             {
                 UpgradeUnit(u);
-                if (st.type == StageType.Boss && UnityEngine.Random.value < 0.45f) UpgradeUnit(u); // 有机会3星
+                if (st.type == StageType.Boss && UnityEngine.Random.value < 0.18f) UpgradeUnit(u); // 少量3星Boss怪
             }
 
             u.x = pos[i, 0];
