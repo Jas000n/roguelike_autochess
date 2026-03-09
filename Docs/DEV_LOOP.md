@@ -62,5 +62,5 @@
 ## Current Execution
 - [x] 建立持续迭代路线图
 - [x] Stage A1 开始拆分主脚本
-- [ ] Stage A1 回归测试
-- [ ] 进入 Stage B
+- [x] Stage A1 回归测试
+- [x] 进入 Stage B
