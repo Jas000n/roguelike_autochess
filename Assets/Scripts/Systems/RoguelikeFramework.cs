@@ -45,6 +45,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         public bool player;
         public bool usedCharge;
         public bool usedOriginProc;
+        public int attacksDone;
 
         public int damageDealt;
         public int damageTaken;
@@ -269,6 +270,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F4)) DevRunRegression3Floors();
         if (Input.GetKeyDown(KeyCode.F5)) DevRunBalanceIterations(50);
         if (Input.GetKeyDown(KeyCode.F6)) DevRunBalanceIterations(100);
+        if (Input.GetKeyDown(KeyCode.F7)) DevRunUiSmokeTest();
         if (Input.GetKeyDown(KeyCode.B)) DevRunBalanceIterations(50);
         if (Input.GetKeyDown(KeyCode.N)) DevRunBalanceIterations(100);
         if (state == RunState.Prepare && Input.GetKeyDown(KeyCode.Space)) StartBattle();
@@ -1262,447 +1264,9 @@ public partial class RoguelikeFramework : MonoBehaviour
 
     #endregion
 
-    #region Hex / Synergy
+    // Hex/Synergy flow moved to RoguelikeFramework.Synergy.cs
 
-    private void RollHexOffers()
-    {
-        currentHexOffers.Clear();
 
-        // 质量优化：已拿过的海克斯不再重复出现，保证构筑选择持续变化。
-        var copy = new List<HexDef>();
-        foreach (var h in hexPool)
-        {
-            if (!HasHex(h.id)) copy.Add(h);
-        }
-
-        // 如果海克斯池被拿空（理论上后期可能发生），允许从全池重抽，避免流程断裂。
-        if (copy.Count == 0)
-        {
-            copy.AddRange(hexPool);
-        }
-
-        for (int i = 0; i < 3 && copy.Count > 0; i++)
-        {
-            int pick = UnityEngine.Random.Range(0, copy.Count);
-            currentHexOffers.Add(copy[pick]);
-            copy.RemoveAt(pick);
-        }
-    }
-
-    private void PickHex(int idx)
-    {
-        if (idx < 0 || idx >= currentHexOffers.Count) return;
-        var h = currentHexOffers[idx];
-
-        // 防御式保护：避免重复添加同一海克斯导致意外叠层。
-        if (!HasHex(h.id))
-        {
-            selectedHexes.Add(h);
-            battleLog = $"获得海克斯：{h.name}";
-        }
-        else
-        {
-            gold += 4;
-            battleLog = $"重复海克斯转化为 +4 金币：{h.name}";
-        }
-
-        StartPreparationForCurrentStage();
-    }
-
-    private bool HasHex(string id)
-    {
-        foreach (var h in selectedHexes) if (h.id == id) return true;
-        return false;
-    }
-
-    private int CountClass(List<Unit> team, string classTag)
-    {
-        int c = 0;
-        // 设计改动：羁绊按“上阵阵容”计算，不因战斗中死亡而失效
-        foreach (var u in team) if (u.ClassTag == classTag) c++;
-        return c;
-    }
-
-    private int CountOrigin(List<Unit> team, string originTag)
-    {
-        int c = 0;
-        foreach (var u in team) if (u.OriginTag == originTag) c++;
-        return c;
-    }
-
-    private string GetClassCn(string classTag)
-    {
-        return classTag switch
-        {
-            "Vanguard" => "钢铁先锋",
-            "Rider" => "机动骑兵",
-            "Artillery" => "火力炮阵",
-            "Leader" => "领袖",
-            "Guardian" => "守护者",
-            "Assassin" => "刺客",
-            "Soldier" => "士兵",
-            _ => classTag
-        };
-    }
-
-    private string GetOriginCn(string originTag)
-    {
-        return originTag switch
-        {
-            "Steel" => "钢铁",
-            "Blaze" => "烈焰",
-            "Shadow" => "暗影",
-            "Thunder" => "雷霆",
-            "Night" => "夜幕",
-            "Stone" => "岩石",
-            "Holy" => "圣辉",
-            "Frost" => "霜寒",
-            "Wind" => "疾风",
-            "Venom" => "毒蚀",
-            "Mist" => "雾隐",
-            _ => originTag
-        };
-    }
-
-    private string GetSynergyEffectDesc(string classTag, int count)
-    {
-        return classTag switch
-        {
-            "Vanguard" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位减伤 +10% / +22%（海克斯可再叠加）",
-            "Rider" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位速度 +2 / +5，首击突进更强",
-            "Artillery" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位伤害 +12% / +22%，4层额外射程+1",
-            "Assassin" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位暴击率 +20% / +45%，暴击伤害 +35%",
-            "Guardian" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位减伤 +12% / +24%，并提供全队小额护卫减伤",
-            "Soldier" => $"{GetClassCn(classTag)}：2/4生效，当前{count}。效果：本羁绊单位普攻伤害 +10% / +22%",
-            "Leader" => $"{GetClassCn(classTag)}：1生效，当前{count}。效果：全队伤害与速度小幅提升",
-            _ => $"{GetClassCn(classTag)}：当前{count}"
-        };
-    }
-
-    private string GetOriginEffectDesc(string originTag, int count)
-    {
-        return originTag switch
-        {
-            "Steel" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位减伤 +8% / +16%",
-            "Blaze" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位伤害 +10% / +20%",
-            "Shadow" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：概率爆发伤害",
-            "Thunder" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位速度 +2 / +4",
-            "Night" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：首次爆发伤害增强",
-            "Stone" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位减伤 +6% / +14%",
-            "Holy" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位命中后小幅回血",
-            "Frost" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：命中时削减目标速度",
-            "Wind" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：本阵营单位速度 +2 / +4",
-            "Venom" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：命中附加额外伤害",
-            "Mist" => $"{GetOriginCn(originTag)}：2/4生效，当前{count}。效果：受击时有概率闪避",
-            _ => $"{GetOriginCn(originTag)}：当前{count}"
-        };
-    }
-
-    private string GetUnitsOfClassText(string classTag)
-    {
-        var names = new List<string>();
-        foreach (var kv in unitDefs)
-        {
-            if (kv.Value.classTag == classTag) names.Add(kv.Value.name);
-        }
-        return names.Count == 0 ? "暂无" : string.Join("、", names);
-    }
-
-    private string GetUnitsOfOriginText(string originTag)
-    {
-        var names = new List<string>();
-        foreach (var kv in unitDefs)
-        {
-            if (kv.Value.originTag == originTag) names.Add(kv.Value.name);
-        }
-        return names.Count == 0 ? "暂无" : string.Join("、", names);
-    }
-
-    private string GetInspectSynergyText(Unit u, List<Unit> team)
-    {
-        int c = CountClass(team, u.ClassTag);
-        int o = CountOrigin(team, u.OriginTag);
-        return $"可激活羁绊：{GetClassCn(u.ClassTag)}（当前上阵{c}）\n" +
-               $"效果：{GetSynergyEffectDesc(u.ClassTag, c)}\n" +
-               $"该羁绊棋子：{GetUnitsOfClassText(u.ClassTag)}\n" +
-               $"可激活阵营：{GetOriginCn(u.OriginTag)}（当前上阵{o}）\n" +
-               $"该阵营棋子：{GetUnitsOfOriginText(u.OriginTag)}";
-    }
-
-    private string GetSynergySummary(List<Unit> team)
-    {
-        string summary = "";
-        var classCount = new Dictionary<string, int>();
-        var originCount = new Dictionary<string, int>();
-        for (int i = 0; i < team.Count; i++)
-        {
-            var u = team[i];
-            if (u == null) continue;
-            if (!classCount.ContainsKey(u.ClassTag)) classCount[u.ClassTag] = 0;
-            if (!originCount.ContainsKey(u.OriginTag)) originCount[u.OriginTag] = 0;
-            classCount[u.ClassTag]++;
-            originCount[u.OriginTag]++;
-        }
-
-        foreach (var kv in classCount)
-        {
-            int need = kv.Key == "Leader" ? 1 : 2;
-            if (kv.Value >= need) summary += $"{GetClassCn(kv.Key)}({kv.Value}) ";
-        }
-        foreach (var kv in originCount)
-        {
-            if (kv.Value >= 2) summary += $"{GetOriginCn(kv.Key)}源({kv.Value}) ";
-        }
-        if (string.IsNullOrEmpty(summary)) summary = "暂无激活羁绊";
-        return summary;
-    }
-
-    private CompDef GetLockedComp()
-    {
-        for (int i = 0; i < compDefs.Count; i++) if (compDefs[i].id == lockedCompId) return compDefs[i];
-        return null;
-    }
-
-    private float GetCompProgress(CompDef c, List<Unit> team)
-    {
-        if (c == null || team == null) return 0f;
-        int ca = CountClass(team, c.classA);
-        int cb = CountClass(team, c.classB);
-        float pa = Mathf.Clamp01(c.needClass2A <= 0 ? 1f : ca / (float)c.needClass2A);
-        float pb = Mathf.Clamp01(c.needClass2B <= 0 ? 1f : cb / (float)c.needClass2B);
-        return (pa + pb) * 0.5f;
-    }
-
-    private bool IsCompActive(CompDef c, List<Unit> team)
-    {
-        if (c == null || team == null) return false;
-        return CountClass(team, c.classA) >= c.needClass2A && CountClass(team, c.classB) >= c.needClass2B;
-    }
-
-    private float GetLockedCompDamageBonus(Unit from)
-    {
-        var c = GetLockedComp();
-        if (c == null) return 0f;
-        var team = from.player ? playerUnits : enemyUnits;
-        if (!IsCompActive(c, team)) return 0f;
-        for (int i = 0; i < c.focusClasses.Length; i++) if (from.ClassTag == c.focusClasses[i]) return c.bonusDmg;
-        return 0f;
-    }
-
-    private float GetLockedCompReductionBonus(Unit u)
-    {
-        var c = GetLockedComp();
-        if (c == null) return 0f;
-        var team = u.player ? playerUnits : enemyUnits;
-        if (!IsCompActive(c, team)) return 0f;
-        for (int i = 0; i < c.focusClasses.Length; i++) if (u.ClassTag == c.focusClasses[i]) return c.bonusReduction;
-        return 0f;
-    }
-
-    private int GetLockedCompSpeedBonus(Unit u)
-    {
-        var c = GetLockedComp();
-        if (c == null) return 0;
-        var team = u.player ? playerUnits : enemyUnits;
-        if (!IsCompActive(c, team)) return 0;
-        for (int i = 0; i < c.focusClasses.Length; i++) if (u.ClassTag == c.focusClasses[i]) return c.bonusSpeed;
-        return 0;
-    }
-
-    private string GetBuildSuggestionText()
-    {
-        return
-            "推荐阵容:\n" +
-            "1) 易成型-钢铁炮阵: 壁垒车/坦克车 + 连发炮/电弧炮, 前排抗住后排持续输出\n" +
-            "2) 易成型-骑炮速攻: 突袭马/跑车 + 连发炮, 前中期节奏快\n" +
-            "3) 难成型-四刺爆发: 暗影士/夜刃士/毒牙士/镜影士 + 梦魇马, 后期秒杀轴\n" +
-            "4) 中速成型-岩壁要塞: 岩石前排 + 迫击炮慢推\n" +
-            "5) 高难终局-双四: 4先锋+4炮, 依赖人口与经济运营";
-    }
-
-    private int GetCompPowerScore(List<Unit> team)
-    {
-        if (team == null) return 0;
-        int score = 0;
-        for (int i = 0; i < team.Count; i++)
-        {
-            var u = team[i];
-            if (u == null || u.def == null) continue;
-            score += u.def.cost * 10;
-            score += u.star * 16;
-            score += u.atk + u.maxHp / 5 + u.spd * 2;
-        }
-        int v = CountClass(team, "Vanguard");
-        int r = CountClass(team, "Rider");
-        int a = CountClass(team, "Artillery");
-        int ass = CountClass(team, "Assassin");
-        int g = CountClass(team, "Guardian");
-        int s = CountClass(team, "Soldier");
-        int l = CountClass(team, "Leader");
-        if (v >= 2) score += 40;
-        if (v >= 4) score += 70;
-        if (r >= 2) score += 35;
-        if (r >= 4) score += 65;
-        if (a >= 2) score += 38;
-        if (a >= 4) score += 72;
-        if (ass >= 2) score += 36;
-        if (ass >= 4) score += 68;
-        if (g >= 2) score += 30;
-        if (g >= 4) score += 58;
-        if (s >= 2) score += 26;
-        if (s >= 4) score += 52;
-        if (l >= 1) score += 22;
-        return score;
-    }
-
-    private float GetCritMultiplier(Unit from)
-    {
-        if (from.ClassTag != "Assassin") return 1f;
-        var team = from.player ? playerUnits : enemyUnits;
-        int assassin = CountClass(team, "Assassin");
-        float critChance = 0.1f;
-        if (assassin >= 2) critChance += 0.2f;
-        if (assassin >= 4) critChance += 0.45f;
-        if (UnityEngine.Random.value < critChance) return 1.35f;
-        return 1f;
-    }
-
-    private float GetDamageMultiplier(Unit from)
-    {
-        float m = 1f;
-        var team = from.player ? playerUnits : enemyUnits;
-
-        int art = CountClass(team, "Artillery");
-        if (from.ClassTag == "Artillery")
-        {
-            if (art >= 2) m += 0.12f;
-            if (art >= 4) m += 0.22f;
-            if (HasHex("cannon_master")) m += 0.25f;
-            if (HasHex("artillery_overclock")) m += 0.15f;
-        }
-
-        if (HasHex("team_atk")) m += 0.08f;
-        if (HasHex("execution_edge")) m += 0.04f;
-        m += GetLockedCompDamageBonus(from);
-
-        int soldier = CountClass(team, "Soldier");
-        if (from.ClassTag == "Soldier")
-        {
-            if (soldier >= 2) m += 0.10f;
-            if (soldier >= 4) m += 0.22f;
-        }
-
-        int leader = CountClass(team, "Leader");
-        if (leader >= 1) m += 0.06f;
-        if (from.ClassTag == "Leader") m += 0.10f;
-
-        int blaze = CountOrigin(team, "Blaze");
-        if (from.OriginTag == "Blaze")
-        {
-            if (blaze >= 2) m += 0.10f;
-            if (blaze >= 4) m += 0.20f;
-        }
-        int frost = CountOrigin(team, "Frost");
-        if (from.OriginTag == "Frost")
-        {
-            if (frost >= 2) m += 0.08f;
-            if (frost >= 4) m += 0.18f;
-        }
-        int venom = CountOrigin(team, "Venom");
-        if (from.OriginTag == "Venom")
-        {
-            if (venom >= 2) m += 0.08f;
-            if (venom >= 4) m += 0.18f;
-            if (HasHex("venom_payload")) m += 0.08f;
-        }
-
-        return m;
-    }
-
-    private int GetSpeedBonus(Unit u)
-    {
-        int b = 0;
-        var team = u.player ? playerUnits : enemyUnits;
-        int rider = CountClass(team, "Rider");
-        if (u.ClassTag == "Rider")
-        {
-            if (rider >= 2) b += 2;
-            if (rider >= 4) b += 5;
-            if (HasHex("rider_relay")) b += 2;
-        }
-
-        int thunder = CountOrigin(team, "Thunder");
-        if (u.OriginTag == "Thunder")
-        {
-            if (thunder >= 2) b += 2;
-            if (thunder >= 4) b += 4;
-        }
-        int wind = CountOrigin(team, "Wind");
-        if (u.OriginTag == "Wind")
-        {
-            if (wind >= 2) b += 2;
-            if (wind >= 4) b += 4;
-            if (HasHex("windwalk")) b += 2;
-        }
-        if (CountClass(team, "Leader") >= 1) b += 1;
-        b += GetLockedCompSpeedBonus(u);
-        return b;
-    }
-
-    private int GetRangeBonus(Unit u)
-    {
-        int b = 0;
-        var team = u.player ? playerUnits : enemyUnits;
-        int art = CountClass(team, "Artillery");
-        if (u.ClassTag == "Artillery" && art >= 4) b += 1;
-        if (u.ClassTag == "Artillery" && HasHex("artillery_range")) b += 1;
-        return b;
-    }
-
-    private float GetDamageReduction(Unit u)
-    {
-        float r = 0f;
-        var team = u.player ? playerUnits : enemyUnits;
-        int van = CountClass(team, "Vanguard");
-        if (u.ClassTag == "Vanguard")
-        {
-            if (van >= 2) r += 0.10f;
-            if (van >= 4) r += 0.22f;
-            if (HasHex("vanguard_wall")) r += 0.18f;
-        }
-        int guardian = CountClass(team, "Guardian");
-        if (u.ClassTag == "Guardian")
-        {
-            if (guardian >= 2) r += 0.12f;
-            if (guardian >= 4) r += 0.24f;
-        }
-        if (guardian >= 2) r += 0.04f;
-
-        int steel = CountOrigin(team, "Steel");
-        if (u.OriginTag == "Steel")
-        {
-            if (steel >= 2) r += 0.08f;
-            if (steel >= 4) r += 0.16f;
-        }
-        int stone = CountOrigin(team, "Stone");
-        if (u.OriginTag == "Stone")
-        {
-            if (stone >= 2) r += 0.06f;
-            if (stone >= 4) r += 0.14f;
-            if (HasHex("stone_oath")) r += 0.08f;
-        }
-        int mist = CountOrigin(team, "Mist");
-        if (u.OriginTag == "Mist")
-        {
-            if (mist >= 2) r += 0.03f;
-            if (mist >= 4) r += 0.08f;
-        }
-        if (u.ClassTag == "Vanguard" && HasHex("vanguard_bastion")) r += 0.08f;
-        r += GetLockedCompReductionBonus(u);
-        return Mathf.Clamp01(r);
-    }
-
-    #endregion
 
     #region Battle
 
@@ -1772,10 +1336,18 @@ public partial class RoguelikeFramework : MonoBehaviour
         if (actor.OriginTag == "Frost")
         {
             int frost = CountOrigin(actor.player ? playerUnits : enemyUnits, "Frost");
-            if (frost >= 2 && target.spd > 3)
+            if (frost >= 2)
             {
-                int down = frost >= 4 ? 2 : 1;
-                target.spd = Mathf.Max(3, target.spd - down);
+                int shard = Mathf.Max(2, Mathf.RoundToInt(target.maxHp * (frost >= 4 ? 0.07f : 0.04f)));
+                dmg += shard;
+            }
+        }
+        if (actor.OriginTag == "Thunder")
+        {
+            int thunder = CountOrigin(actor.player ? playerUnits : enemyUnits, "Thunder");
+            if (thunder >= 2)
+            {
+                dmg += thunder >= 4 ? 7 : 4;
             }
         }
 
@@ -1796,6 +1368,7 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         if (dist <= actorRange)
         {
+            actor.attacksDone++;
             int real = ApplyDamageWithTraits(actor, target, dmg);
             if (actorRange > 1)
             {
@@ -1846,6 +1419,53 @@ public partial class RoguelikeFramework : MonoBehaviour
                     if (!t.Alive || t == target) continue;
                     int ad = Mathf.Abs(t.x - target.x) + Mathf.Abs(t.y - target.y);
                     if (ad <= 1) ApplyDamageWithTraits(actor, t, Mathf.Max(1, Mathf.RoundToInt(dmg * 0.33f)));
+                }
+            }
+            if (actor.OriginTag == "Thunder")
+            {
+                int thunder = CountOrigin(actor.player ? playerUnits : enemyUnits, "Thunder");
+                if (thunder >= 2 && actor.attacksDone % 3 == 0)
+                {
+                    var chainTargets = actor.player ? enemyUnits : playerUnits;
+                    Unit chained = null;
+                    int bestD = 999;
+                    for (int i = 0; i < chainTargets.Count; i++)
+                    {
+                        var t = chainTargets[i];
+                        if (!t.Alive || t.id == target.id) continue;
+                        int d = Mathf.Abs(t.x - target.x) + Mathf.Abs(t.y - target.y);
+                        if (d < bestD)
+                        {
+                            bestD = d;
+                            chained = t;
+                        }
+                    }
+                    if (chained != null)
+                    {
+                        int chainDmg = Mathf.Max(2, Mathf.RoundToInt(real * (thunder >= 4 ? 0.55f : 0.35f)));
+                        ApplyDamageWithTraits(actor, chained, chainDmg);
+                        SpawnHitFlash(chained, new Color(0.65f, 0.85f, 1f), 0.9f);
+                        battleLog += $" | 雷弧-{chainDmg}";
+                    }
+                }
+            }
+            if (actor.OriginTag == "Frost")
+            {
+                int frost = CountOrigin(actor.player ? playerUnits : enemyUnits, "Frost");
+                if (frost >= 4)
+                {
+                    var splashTargets = actor.player ? enemyUnits : playerUnits;
+                    foreach (var t in splashTargets)
+                    {
+                        if (!t.Alive || t.id == target.id) continue;
+                        int ad = Mathf.Abs(t.x - target.x) + Mathf.Abs(t.y - target.y);
+                        if (ad <= 1)
+                        {
+                            int shard = Mathf.Max(1, Mathf.RoundToInt(real * 0.3f));
+                            ApplyDamageWithTraits(actor, t, shard);
+                            SpawnHitFlash(t, new Color(0.75f, 0.92f, 1f), 0.75f);
+                        }
+                    }
                 }
             }
         }
@@ -2767,14 +2387,15 @@ public partial class RoguelikeFramework : MonoBehaviour
     private void DrawCompPanel(float x, float y, float w, float h, List<Unit> team)
     {
         string lockText = string.IsNullOrEmpty(lockedCompId) ? "未锁定路线" : $"已锁定：{GetLockedComp()?.name ?? "未知"}";
-        GUI.Box(new Rect(x, y, w, h), $"阵容路线（{lockText}）");
+        float panelH = showCompPanelFoldout ? h : 64f;
+        GUI.Box(new Rect(x, y, w, panelH), $"阵容路线（{lockText}）");
         if (GUI.Button(new Rect(x + w - 132, y + 2, 122, 22), showCompPanelFoldout ? "折叠路线" : "展开路线"))
         {
             showCompPanelFoldout = !showCompPanelFoldout;
         }
         if (!showCompPanelFoldout)
         {
-            GUI.Label(new Rect(x + 12, y + 30, w - 24, 22), "路线面板已折叠。点击“展开路线”再手动选择，不会自动锁定。");
+            GUI.Label(new Rect(x + 12, y + 30, w - 24, 22), "路线面板已折叠。点击“展开路线”查看与锁定阵容。");
             return;
         }
 
@@ -3011,13 +2632,13 @@ public partial class RoguelikeFramework : MonoBehaviour
         titleStyle.fontSize = 22;
 
         chipTitleStyle.normal.textColor = Color.white;
-        chipTitleStyle.fontSize = 13;
+        chipTitleStyle.fontSize = 14;
         chipTitleStyle.fontStyle = FontStyle.Bold;
         chipTitleStyle.wordWrap = false;
         chipTitleStyle.clipping = TextClipping.Clip;
 
         chipMetaStyle.normal.textColor = new Color(0.86f, 0.93f, 1f);
-        chipMetaStyle.fontSize = 11;
+        chipMetaStyle.fontSize = 12;
         chipMetaStyle.wordWrap = false;
         chipMetaStyle.clipping = TextClipping.Clip;
 
@@ -3078,7 +2699,7 @@ public partial class RoguelikeFramework : MonoBehaviour
         float guiH = Screen.height / uiScale;
         bool compact = guiW < 1480f;
         // Windowed mode on macOS can overlap IMGUI top rows with title bar.
-        float topPad = Screen.fullScreen ? 10f : 30f;
+        float topPad = Screen.fullScreen ? 10f : (Application.platform == RuntimePlatform.OSXPlayer ? 58f : 30f);
 
         float leftW = compact ? 300f : 350f;
         float rightW = compact ? 360f : 430f;
@@ -3139,6 +2760,10 @@ public partial class RoguelikeFramework : MonoBehaviour
             if (GUI.Button(new Rect(centerX + 560f, 78 + topPad, 124, 28), "平衡测试100轮"))
             {
                 DevRunBalanceIterations(100);
+            }
+            if (GUI.Button(new Rect(centerX + 686f, 78 + topPad, 136, 28), "UI烟雾测试"))
+            {
+                DevRunUiSmokeTest();
             }
             if (GUI.Button(new Rect(guiW - 126, 46 + topPad, 108, 28), "调试+999金"))
             {

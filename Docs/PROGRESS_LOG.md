@@ -158,3 +158,21 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 1. 继续 50 轮 x 4 组平衡回归，目标：`4先锋`触发率 >= 10%
 2. 商店概率重构（前中期提高 1~2费命中，后期再放开 4~5费）
 3. 阵营羁绊 UI 面板独立卡片化（职业/阵营双栏），提升可读性与策略表达
+
+## 2026-03-09 11:16 EST
+### Done
+- 按 Stage A1 继续拆分主脚本：将 `#region Hex / Synergy` 从 `RoguelikeFramework.cs` 抽离到新文件 `Assets/Scripts/Systems/RoguelikeFramework.Synergy.cs`。
+- 主文件对应区域替换为“已迁移”注释，降低单文件体积与冲突面，便于后续继续拆 Economy/Battle/UI。
+
+### Verify
+- 静态检查：`RoguelikeFramework.cs` 中原 Hex/Synergy 方法已移除，方法定义集中在 `RoguelikeFramework.Synergy.cs`。
+- 关键流程回归尝试：执行 `Tools/ui_playtest_regression.sh` 触发失败，原因为当前环境缺少 `screencapture` 命令（脚本在首张截图处中断，未进入完整回归链路）。
+
+### Found / Risks
+- 当前 host 环境不具备脚本截图能力，导致“开局→准备→战斗→奖励/海克斯→下一关”的自动 UI 回归无法完整跑通。
+- 下一轮需要先为回归脚本加“无截图降级模式”或补齐截图依赖，避免阻塞持续心跳开发循环。
+
+### Next
+1. 为 `ui_playtest_regression.sh` 增加 screenshot capability 检测与降级（无 `screencapture` 时仅记录步骤日志，不中断）。
+2. 在可运行环境重新执行关键链路回归，确认状态机闭环（Stage/Prepare/Battle/Reward/Hex）。
+3. 继续 Stage A1：优先拆 `Units/Shop/Economy` 区域到独立 partial。
