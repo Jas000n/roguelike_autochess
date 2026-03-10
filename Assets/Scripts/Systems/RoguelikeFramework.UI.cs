@@ -919,9 +919,15 @@ public partial class RoguelikeFramework
             float benchW = (panelW - 32f - 7f * benchGap) / 8f;
             float benchH = 102f;
 
-            GUI.Label(new Rect(panelX + 14, panelY + 8, 150, 28), $"<size=21><b>金币 {gold}</b></size>", hudStatStyle);
-            GUI.Label(new Rect(panelX + 170, panelY + 8, 180, 28), $"<size=21><b>经验 {exp}/{ExpNeed(playerLevel)}</b></size>", hudStatStyle);
-            GUI.Label(new Rect(panelX + 360, panelY + 8, 160, 28), $"<size=21><b>上阵 {GetBoardCap()}</b></size>", hudStatStyle);
+            // B3 奖励视觉支持：计算并展示当前经济预期
+            int currentInterestRaw = gold / 10;
+            int effectiveCap = GetInterestCap();
+            int currentInterest = Mathf.Min(currentInterestRaw, effectiveCap);
+            string interestText = effectiveCap < 5 ? $"<color=#ffaa88>利息 +{currentInterest} (上限 {effectiveCap})</color>" : $"利息 +{currentInterest}";
+
+            GUI.Label(new Rect(panelX + 14, panelY + 8, 220, 28), $"<size=21><b>金币 {gold}</b></size> <size=14>{interestText}</size>", hudStatStyle);
+            GUI.Label(new Rect(panelX + 240, panelY + 8, 180, 28), $"<size=21><b>经验 {exp}/{ExpNeed(playerLevel)}</b></size>", hudStatStyle);
+            GUI.Label(new Rect(panelX + 430, panelY + 8, 160, 28), $"<size=21><b>上阵 {GetBoardCap()}</b></size>", hudStatStyle);
             float topButtonsX = panelX + panelW - opsW;
             float oddsX = panelX + 520f;
             float oddsW = Mathf.Max(310f, topButtonsX - oddsX - 12f);

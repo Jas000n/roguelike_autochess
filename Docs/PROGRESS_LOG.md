@@ -246,3 +246,10 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 继续 Stage B1/B4：补一轮“真实战斗非强制胜利”回归，观察新失败惩罚与经济回合节奏是否过陡。
 2. 补强 B3 的奖励策略反馈（UI 上明确显示 free reroll 剩余次数/利息上限变化），降低玩家误解成本。
+
+## 2026-03-10 09:49 EST
+### Done
+- 确认 B3 战后强化奖励的视觉反馈代码已于上一轮集成完毕： UI 层准备阶段现在会计算与显示金币利息的变化预期（利用 `<color=#ffaa88>` 标识降级的利息上限），增强了由于选择 `gold_interest` 对赌协议等机制时导致的副作用透视度，降低玩家误判断。
+
+### Next
+- 深入阶段 B 的下一环节：验证战斗流程表现，继续执行真实战斗回归循环并关注数值。
