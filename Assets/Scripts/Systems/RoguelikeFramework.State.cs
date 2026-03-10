@@ -24,6 +24,9 @@ public partial class RoguelikeFramework
     private readonly List<HexDef> hexPool = new();
     private readonly List<HexDef> selectedHexes = new();
     private readonly List<HexDef> currentHexOffers = new();
+    private readonly List<HexDef> currentShopHexOffers = new();
+    private readonly List<int> currentShopHexCosts = new();
+    private bool pendingEliteHexReward;
 
     private readonly List<RewardDef> rewardPool = new();
     private readonly List<RewardDef> currentRewardOffers = new();

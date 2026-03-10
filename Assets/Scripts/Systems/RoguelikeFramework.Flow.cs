@@ -128,7 +128,10 @@ public partial class RoguelikeFramework
         selectedHexes.Clear();
         currentRewardOffers.Clear();
         currentHexOffers.Clear();
+        currentShopHexOffers.Clear();
+        currentShopHexCosts.Clear();
         pendingHexAfterReward = false;
+        pendingEliteHexReward = false;
         deploySlots.Clear();
         FillRandomOpeningBench();
         state = RunState.Stage;
@@ -682,6 +685,7 @@ public partial class RoguelikeFramework
         }
 
         RefreshShop(true);
+        if (effectiveType == StageType.Shop) RollShopHexOffers();
         AutoMergeAll();
         RedrawPrepareBoard();
 
@@ -809,6 +813,7 @@ public partial class RoguelikeFramework
         }
 
         SpawnEnemiesForStage(st);
+        ApplyAssassinAmbush();
 
         CreateViews(playerUnits, new Color(0.2f, 0.7f, 1f));
         CreateViews(enemyUnits, new Color(0.95f, 0.35f, 0.4f));
@@ -945,7 +950,8 @@ public partial class RoguelikeFramework
             }
         }
 
-        pendingHexAfterReward = st.giveHex;
+        pendingEliteHexReward = win && effectiveType == StageType.Elite;
+        pendingHexAfterReward = st.giveHex || pendingEliteHexReward;
         RollRewardOffers();
         state = RunState.Reward;
         battleLog += " | 战后奖励三选一";

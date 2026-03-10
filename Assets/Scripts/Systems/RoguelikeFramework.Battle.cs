@@ -213,6 +213,60 @@ public partial class RoguelikeFramework
         battleStartedTurn++;
     }
 
+    private void ApplyAssassinAmbush()
+    {
+        void AmbushTeam(List<Unit> attackers, List<Unit> defenders)
+        {
+            if (CountClass(attackers, "Assassin") < 2) return;
+            for (int i = 0; i < attackers.Count; i++)
+            {
+                var assassin = attackers[i];
+                if (!assassin.Alive || assassin.ClassTag != "Assassin") continue;
+
+                Unit target = null;
+                int bestScore = int.MinValue;
+                for (int j = 0; j < defenders.Count; j++)
+                {
+                    var d = defenders[j];
+                    if (!d.Alive) continue;
+                    int score = d.range * 10 + (assassin.player ? d.x : (W - 1 - d.x));
+                    if (score > bestScore)
+                    {
+                        bestScore = score;
+                        target = d;
+                    }
+                }
+                if (target == null) continue;
+
+                Vector2Int[] offsets = assassin.player
+                    ? new[] { new Vector2Int(-1, 0), new Vector2Int(-1, -1), new Vector2Int(-1, 1), new Vector2Int(-2, 0) }
+                    : new[] { new Vector2Int(1, 0), new Vector2Int(1, -1), new Vector2Int(1, 1), new Vector2Int(2, 0) };
+
+                for (int k = 0; k < offsets.Length; k++)
+                {
+                    int nx = Mathf.Clamp(target.x + offsets[k].x, 0, W - 1);
+                    int ny = Mathf.Clamp(target.y + offsets[k].y, 0, H - 1);
+                    bool occupied = false;
+
+                    for (int t = 0; t < attackers.Count; t++)
+                    {
+                        if (t == i || !attackers[t].Alive) continue;
+                        if (attackers[t].x == nx && attackers[t].y == ny) { occupied = true; break; }
+                    }
+                    if (!occupied)
+                    {
+                        assassin.x = nx;
+                        assassin.y = ny;
+                        break;
+                    }
+                }
+            }
+        }
+
+        AmbushTeam(playerUnits, enemyUnits);
+        AmbushTeam(enemyUnits, playerUnits);
+    }
+
     private Unit NearestAlive(Unit from, List<Unit> list)
     {
         Unit best = null;

@@ -8,18 +8,22 @@ public partial class RoguelikeFramework
     private void RollHexOffers()
     {
         currentHexOffers.Clear();
+        bool eliteOnly = pendingEliteHexReward;
 
-        // 质量优化：已拿过的海克斯不再重复出现，保证构筑选择持续变化。
         var copy = new List<HexDef>();
         foreach (var h in hexPool)
         {
-            if (!HasHex(h.id)) copy.Add(h);
+            if (HasHex(h.id)) continue;
+            if (eliteOnly && h.rarity != "金" && h.rarity != "彩") continue;
+            copy.Add(h);
         }
 
-        // 如果海克斯池被拿空（理论上后期可能发生），允许从全池重抽，避免流程断裂。
         if (copy.Count == 0)
         {
-            copy.AddRange(hexPool);
+            foreach (var h in hexPool)
+            {
+                if (!eliteOnly || h.rarity == "金" || h.rarity == "彩") copy.Add(h);
+            }
         }
 
         for (int i = 0; i < 3 && copy.Count > 0; i++)
@@ -47,7 +51,57 @@ public partial class RoguelikeFramework
             battleLog = $"重复海克斯转化为 +4 金币：{h.name}";
         }
 
+        pendingEliteHexReward = false;
         AdvanceToStageMapFromCurrentNode();
+    }
+
+    private void RollShopHexOffers()
+    {
+        currentShopHexOffers.Clear();
+        currentShopHexCosts.Clear();
+
+        var pool = new List<HexDef>();
+        foreach (var h in hexPool)
+        {
+            if (HasHex(h.id)) continue;
+            pool.Add(h);
+        }
+        if (pool.Count == 0) return;
+
+        int offerCount = Mathf.Min(2, pool.Count);
+        for (int i = 0; i < offerCount; i++)
+        {
+            int pick = UnityEngine.Random.Range(0, pool.Count);
+            var h = pool[pick];
+            pool.RemoveAt(pick);
+            currentShopHexOffers.Add(h);
+            int cost = h.rarity switch
+            {
+                "彩" => 12,
+                "金" => 8,
+                "蓝" => 5,
+                _ => 3
+            };
+            currentShopHexCosts.Add(cost);
+        }
+    }
+
+    private void BuyShopHex(int idx)
+    {
+        if (idx < 0 || idx >= currentShopHexOffers.Count || idx >= currentShopHexCosts.Count) return;
+        var h = currentShopHexOffers[idx];
+        int cost = currentShopHexCosts[idx];
+        if (gold < cost)
+        {
+            battleLog = $"金币不足，无法购买海克斯：{h.name}";
+            return;
+        }
+
+        gold -= cost;
+        selectedHexes.Add(h);
+        battleLog = $"商店购入海克斯：{h.name} (-{cost}金)";
+        currentShopHexOffers.RemoveAt(idx);
+        currentShopHexCosts.RemoveAt(idx);
     }
 
     private bool HasHex(string id)

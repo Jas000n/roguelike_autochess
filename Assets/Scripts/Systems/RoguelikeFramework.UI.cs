@@ -878,7 +878,8 @@ public partial class RoguelikeFramework
             float oddsW = Mathf.Max(310f, topButtonsX - oddsX - 12f);
             DrawShopOddsPanel(new Rect(oddsX, panelY + 6, oddsW, 34f));
 
-            if (GUI.Button(new Rect(topButtonsX, panelY + 6, 90, 34), "刷新(-1)")) RefreshShop();
+            string rerollBtnText = freeRerollTurns > 0 ? $"免费({freeRerollTurns})" : "刷新(-1)";
+            if (GUI.Button(new Rect(topButtonsX, panelY + 6, 90, 34), rerollBtnText)) RefreshShop();
             if (GUI.Button(new Rect(topButtonsX + 98, panelY + 6, 108, 34), "买经验(-4)"))
             {
                 if (gold >= 4) { gold -= 4; GainExp(4); }

@@ -34,17 +34,17 @@ public partial class RoguelikeFramework
         AddDef("general_fire", "火焰君主", "帅", "Leader", "Blaze", 5, 58, 13, 8, 1);
         AddDef("ele_guard", "岩石巨像", "象", "Guardian", "Stone", 3, 60, 8, 5, 1);
         AddDef("guard_assassin", "暗影士", "士", "Assassin", "Shadow", 2, 30, 11, 11, 1);
-        AddDef("guard_blade", "夜刃士", "士", "Assassin", "Night", 2, 29, 12, 12, 1);
+        AddDef("guard_blade", "夜刃士", "士", "Soldier", "Night", 2, 35, 11, 10, 1);
         AddDef("guard_poison", "毒牙士", "士", "Assassin", "Venom", 3, 32, 13, 11, 1);
-        AddDef("guard_mirror", "镜影士", "士", "Assassin", "Venom", 4, 31, 16, 12, 1);
+        AddDef("guard_mirror", "镜影士", "士", "Guardian", "Mist", 4, 46, 12, 10, 1);
         AddDef("guard_mist", "雾刃士", "士", "Assassin", "Mist", 3, 31, 13, 12, 1);
-        AddDef("guard_holy", "圣卫士", "士", "Guardian", "Holy", 3, 54, 8, 7, 1);
+        AddDef("guard_holy", "圣卫士", "士", "Medic", "Holy", 3, 48, 8, 8, 2);
         AddDef("chariot_bulwark", "壁垒车", "车", "Vanguard", "Stone", 2, 58, 7, 6, 1);
         AddDef("chariot_ram", "冲城车", "车", "Vanguard", "Blaze", 4, 62, 10, 6, 1);
         AddDef("soldier_phalanx", "方阵兵", "兵", "Vanguard", "Steel", 1, 34, 6, 7, 1);
         AddDef("soldier_guard", "护卫兵", "兵", "Vanguard", "Stone", 1, 36, 6, 7, 1);
         AddDef("soldier_sword", "剑士兵", "兵", "Soldier", "Steel", 1, 26, 9, 8, 1);
-        AddDef("soldier_zeal", "誓约兵", "兵", "Soldier", "Holy", 2, 29, 10, 9, 1);
+        AddDef("soldier_zeal", "誓约兵", "兵", "Medic", "Holy", 2, 31, 8, 9, 2);
         AddDef("horse_lancer", "枪骑马", "马", "Rider", "Steel", 2, 35, 11, 11, 1);
 
         foreach (var kv in unitDefs) basePool.Add(kv.Key);
@@ -504,6 +504,9 @@ public partial class RoguelikeFramework
         AddHex("windwalk", "疾风步", "蓝", "风系单位速度和闪避提高");
         AddHex("reroll_engine", "精密改造", "彩", "每回合首次刷新免费，并额外获得1次刷新");
         AddHex("triple_prep", "追三计划", "彩", "场上最高星级单位再获额外属性");
+        AddHex("royal_supply", "王庭军需", "彩", "准备阶段额外获得 6 金币，并在商店节点额外刷新 1 张海克斯奇物");
+        AddHex("assassin_gate", "影门突袭", "彩", "刺客开战切入后排时首次攻击额外造成 18 伤害并获得 25% 减伤");
+        AddHex("guardian_grace", "神佑守望", "金", "守护者与医者每回合首次行动时为最低生命友军回复生命");
     }
 
     private void AddHex(string id, string name, string rarity, string desc)
