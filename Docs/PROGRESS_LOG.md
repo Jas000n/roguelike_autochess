@@ -227,3 +227,22 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
   - `free_reroll_3` (补给连拨): 直接提供 3 次免费刷新机会 (`freeRerollTurns` 计数，随刷新消耗，优先级置于金币消耗前)。
   - `gold_interest` (对赌协议): 立即获得金币，但通过引入 `interestCapModifier` 永久降低利息上限。
   - 核心经济机制 (`RefreshShop`, `GetInterestCap`) 兼容处理了这些修饰符结构，并在重开时正常清理。
+
+## 2026-03-10 04:19 EST
+### Done
+- 持续循环推进（Stage B 稳定性向）：修复 `StartPreparationForCurrentStage()` 中低血保底提示被覆盖的问题。
+- 具体改动：将准备阶段文案改为 `prepMsg`，若本回合先触发“濒危补给触发”提示，则改为拼接 `濒危补给提示 | 准备阶段信息`，避免关键保底信息丢失。
+- 修改文件：`Assets/Scripts/Systems/RoguelikeFramework.Flow.cs`
+
+### Verify
+- 执行 Unity 批处理编译回归（无头）：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -logFile /tmp/dcl_unity_compile.log`
+  - 日志结果：`Exiting batchmode successfully now!`（编译/域重载完成，无脚本编译报错）
+- 关键流程链路风险评估：本次仅改 battleLog 文案合并逻辑，不改状态机跳转与数值结算。
+
+### Found / Risks
+- 目前主机侧仍缺少完整 UI 自动化驱动闭环（开局→准备→战斗→奖励/海克斯→下一关）的实时点击验证；本轮以无头编译 + 逻辑级审查兜底。
+
+### Next
+1. 继续 Stage B1/B4：补一轮“真实战斗非强制胜利”回归，观察新失败惩罚与经济回合节奏是否过陡。
+2. 补强 B3 的奖励策略反馈（UI 上明确显示 free reroll 剩余次数/利息上限变化），降低玩家误解成本。
