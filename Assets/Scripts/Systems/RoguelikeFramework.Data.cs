@@ -418,6 +418,20 @@ public partial class RoguelikeFramework
                 }
                 battleLog = "奖励：获得双人补给";
                 break;
+            case "free_reroll_3":
+                // TODO: Add freeRerollTurns state variable
+                battleLog = "奖励：未来3回合首次刷新免费 (系统待接入)";
+                break;
+            case "gold_interest":
+                gold += 10;
+                // TODO: Add interestCapModifier state
+                battleLog = "奖励：对赌协议 +10金币 (上限惩罚待接入)";
+                break;
+            case "exp_burst":
+                int burst = playerLevel * 3;
+                GainExp(burst);
+                battleLog = $"奖励：极限阅历 +{burst}经验";
+                break;
             case "reroll_pack":
                 RefreshShop(true);
                 gold += 2;
