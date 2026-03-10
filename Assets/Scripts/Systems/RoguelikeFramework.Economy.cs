@@ -422,6 +422,49 @@ public partial class RoguelikeFramework
         }
     }
 
+    private bool DeployBenchUnitToFirstOpen(int benchIdx)
+    {
+        if (benchIdx < 0 || benchIdx >= benchUnits.Count) return false;
+        if (deploySlots.Count >= GetBoardCap())
+        {
+            battleLog = $"上阵已满（上限{GetBoardCap()}）";
+            return false;
+        }
+
+        int[] preferredRows = { 1, 2, 3, 0, 4, 5 };
+        for (int r = 0; r < preferredRows.Length; r++)
+        {
+            int y = preferredRows[r];
+            for (int x = 0; x < 5; x++)
+            {
+                bool occupied = false;
+                for (int i = 0; i < deploySlots.Count; i++)
+                {
+                    if (deploySlots[i].x == x && deploySlots[i].y == y)
+                    {
+                        occupied = true;
+                        break;
+                    }
+                }
+
+                if (occupied) continue;
+
+                var u = benchUnits[benchIdx];
+                benchUnits.RemoveAt(benchIdx);
+                u.x = x;
+                u.y = y;
+                deploySlots.Add(u);
+                AutoMergeAll();
+                RedrawPrepareBoard();
+                battleLog = $"{u.Name} 已上阵";
+                return true;
+            }
+        }
+
+        battleLog = "未找到可用上阵格";
+        return false;
+    }
+
     private bool ReturnDeployToBench(int deployIdx)
     {
         if (deployIdx < 0 || deployIdx >= deploySlots.Count) return false;

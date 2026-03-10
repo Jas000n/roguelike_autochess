@@ -52,6 +52,9 @@ public partial class RoguelikeFramework
 
     private void AddDef(string key, string name, string family, string classTag, string originTag, int cost, int hp, int atk, int spd, int range)
     {
+        // Higher-cost units should feel premium before star-ups and synergies kick in.
+        float hpScale = 1f + Mathf.Max(0, cost - 1) * 0.08f;
+        float atkScale = 1f + Mathf.Max(0, cost - 1) * 0.06f;
         unitDefs[key] = new UnitDef
         {
             key = key,
@@ -60,8 +63,8 @@ public partial class RoguelikeFramework
             classTag = classTag,
             originTag = originTag,
             cost = cost,
-            hp = hp,
-            atk = atk,
+            hp = Mathf.RoundToInt(hp * hpScale),
+            atk = Mathf.RoundToInt(atk * atkScale),
             spd = spd,
             range = range
         };

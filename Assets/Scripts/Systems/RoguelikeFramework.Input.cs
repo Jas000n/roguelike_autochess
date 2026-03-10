@@ -46,11 +46,14 @@ public partial class RoguelikeFramework
         float guiH = Screen.height / s;
 
         float panelX = 16f;
-        float panelY = guiH - 170f;
+        float panelW = Screen.width / s - 32f;
+        float panelY = guiH - 312f;
+        float benchGap = 10f;
         float benchX = panelX + 16f;
-        float benchY = panelY + 88f;
-        float benchSlotW = 90f;
-        float benchBtnW = 84f;
+        float benchY = panelY + 194f;
+        float benchSlotW = (panelW - 32f - 7f * benchGap) / 8f;
+        float benchBtnW = benchSlotW;
+        float benchBtnH = 102f;
         int benchCols = 8;
 
         int FindDeployAt(int x, int y)
@@ -75,8 +78,8 @@ public partial class RoguelikeFramework
 
             for (int i = 0; i < benchCols; i++)
             {
-                float bx = benchX + i * benchSlotW;
-                if (mx >= bx && mx <= bx + benchBtnW && myGui >= benchY && myGui <= benchY + 45f) return new Vector2(-1, i);
+                float bx = benchX + i * (benchSlotW + benchGap);
+                if (mx >= bx && mx <= bx + benchBtnW && myGui >= benchY && myGui <= benchY + benchBtnH) return new Vector2(-1, i);
             }
             return new Vector2(-2, -2);
         }

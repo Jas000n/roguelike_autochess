@@ -80,6 +80,9 @@ public partial class RoguelikeFramework : MonoBehaviour
         public string desc;
     }
 
+    private int freeRerollTurns;
+    private int interestCapModifier;
+
     private class CompDef
     {
         public string id;
@@ -461,18 +464,18 @@ public partial class RoguelikeFramework : MonoBehaviour
     private Color GetUnitChipColor(Unit u)
     {
         if (u == null || u.def == null) return new Color(0.26f, 0.34f, 0.5f, 0.95f);
-        return GetUnitChipColorByClass(u.ClassTag);
+        return GetUnitChipColorByCost(u.def.cost);
     }
 
-    private Color GetUnitChipColorByClass(string classTag)
+    private Color GetUnitChipColorByCost(int cost)
     {
-        return classTag switch
+        return Mathf.Clamp(cost, 1, 5) switch
         {
-            // 深色高对比调色，保障按钮文字可读
-            "Vanguard" => new Color(0.18f, 0.4f, 0.64f, 0.97f),
-            "Rider" => new Color(0.15f, 0.5f, 0.36f, 0.97f),
-            "Artillery" => new Color(0.58f, 0.3f, 0.16f, 0.97f),
-            "Assassin" => new Color(0.38f, 0.22f, 0.62f, 0.97f),
+            1 => new Color(0.78f, 0.8f, 0.84f, 0.97f),
+            2 => new Color(0.16f, 0.62f, 0.34f, 0.97f),
+            3 => new Color(0.18f, 0.42f, 0.8f, 0.97f),
+            4 => new Color(0.54f, 0.24f, 0.72f, 0.97f),
+            5 => new Color(0.84f, 0.48f, 0.12f, 0.97f),
             _ => new Color(0.22f, 0.3f, 0.46f, 0.97f)
         };
     }

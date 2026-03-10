@@ -529,14 +529,14 @@ public partial class RoguelikeFramework
         if (def == null) return;
         bool compact = r.width <= 138f;
         Color old = GUI.color;
-        GUI.color = GetUnitChipColorByClass(def.classTag);
+        GUI.color = GetUnitChipColorByCost(def.cost);
         GUI.DrawTexture(r, Texture2D.whiteTexture);
         GUI.color = new Color(0.08f, 0.11f, 0.16f, 0.95f);
         GUI.DrawTexture(new Rect(r.x + 2, r.y + 2, r.width - 4, r.height - 4), Texture2D.whiteTexture);
 
         var icon = PickIcon(def);
         float iconW = compact ? 40f : 48f;
-        GUI.color = new Color(0.15f, 0.22f, 0.34f, 0.95f);
+        GUI.color = new Color(0.13f, 0.18f, 0.28f, 0.95f);
         GUI.DrawTexture(new Rect(r.x + 8, r.y + 8, iconW, iconW), Texture2D.whiteTexture);
         GUI.color = Color.white;
         if (icon != null) GUI.DrawTexture(new Rect(r.x + 8, r.y + 8, iconW, iconW), icon, ScaleMode.ScaleToFit, true);
@@ -782,9 +782,12 @@ public partial class RoguelikeFramework
                     DrawUnitChipCard(r, u.def, u.star, u.def.cost, false);
                     if (GUI.Button(r, GUIContent.none, GUIStyle.none))
                     {
-                        inspectedUnit = u;
-                        ShowTooltip(BuildUnitTooltip(u));
-                        battleLog = $"查看 {u.Name}";
+                        if (!DeployBenchUnitToFirstOpen(i))
+                        {
+                            inspectedUnit = u;
+                            ShowTooltip(BuildUnitTooltip(u));
+                            battleLog = $"查看 {u.Name}";
+                        }
                     }
                 }
                 else GUI.Box(new Rect(bx, panelY + 194, benchW, benchH), "");
