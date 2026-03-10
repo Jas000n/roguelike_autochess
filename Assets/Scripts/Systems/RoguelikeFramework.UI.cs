@@ -926,8 +926,8 @@ public partial class RoguelikeFramework
             string interestText = effectiveCap < 5 ? $"<color=#ffaa88>利息 +{currentInterest} (上限 {effectiveCap})</color>" : $"利息 +{currentInterest}";
 
             GUI.Label(new Rect(panelX + 14, panelY + 8, 220, 28), $"<size=21><b>金币 {gold}</b></size> <size=14>{interestText}</size>", hudStatStyle);
-            GUI.Label(new Rect(panelX + 240, panelY + 8, 180, 28), $"<size=21><b>经验 {exp}/{ExpNeed(playerLevel)}</b></size>", hudStatStyle);
-            GUI.Label(new Rect(panelX + 430, panelY + 8, 160, 28), $"<size=21><b>上阵 {GetBoardCap()}</b></size>", hudStatStyle);
+            GUI.Label(new Rect(panelX + 260, panelY + 8, 180, 28), $"<size=21><b>经验 {exp}/{ExpNeed(playerLevel)}</b></size>", hudStatStyle);
+            GUI.Label(new Rect(panelX + 450, panelY + 8, 160, 28), $"<size=21><b>上阵 {GetBoardCap()}</b></size>", hudStatStyle);
             float topButtonsX = panelX + panelW - opsW;
             float oddsX = panelX + 520f;
             float oddsW = Mathf.Max(310f, topButtonsX - oddsX - 12f);
