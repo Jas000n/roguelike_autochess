@@ -334,6 +334,10 @@ public partial class RoguelikeFramework
         rewardPool.Add(new RewardDef { id = "board_bonus", name = "扩编令", desc = "本局上阵上限永久 +1" });
         rewardPool.Add(new RewardDef { id = "star_up", name = "战地升星", desc = "随机提升 1 个我方棋子星级（最高3星）" });
         rewardPool.Add(new RewardDef { id = "hex_random", name = "奇物箱", desc = "随机获得 1 个未拥有海克斯" });
+        // Stage B3 奖励深度：新增更多构筑向选项
+        rewardPool.Add(new RewardDef { id = "free_reroll_3", name = "补给连拨", desc = "接下来3回合，每回合首次刷新免费" });
+        rewardPool.Add(new RewardDef { id = "gold_interest", name = "对赌协议", desc = "获得10金币，但本局利息上限-1" });
+        rewardPool.Add(new RewardDef { id = "exp_burst", name = "极限阅历", desc = "获得等同于当前等级*3的经验值" });
     }
 
     private void RollRewardOffers()
