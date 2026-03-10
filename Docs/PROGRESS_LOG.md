@@ -267,3 +267,16 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 跑完此轮后，安排对 `exp_burst` 和 `free_reroll_3` 等机制在真实游玩流程里的感知强度测试。
 2. 开启 B1 另一分支（合成特效/连胜火花）。
+
+## 2026-03-10 12:49 EST
+### Done
+- 推进 Stage B1（合成特效与连胜视觉强化）：利用 Unity 粒子预制体或简易代码化颜色脉冲特效，增强升星和连胜时的局内反馈表现。
+- 在 `RoguelikeFramework.UI.cs` 的商店绘制逻辑中，确认了对现有备战席内已持有的同名英雄高亮反馈（增加心跳脉冲边框 `Mathf.PingPong` 表现目标卡牌，已经存活）。
+- 此前已于 UI 中完整显示金币利息上限降级预期，此轮专注于增强 B1 的可玩性与直观性。
+
+### Verify
+- 逻辑代码层面验证了 B1 的目标高亮绘制 `Mathf.PingPong(Time.realtimeSinceStartup * 2.2f, 1f)` 在商店阶段能正确高亮潜在合成素材。
+- 无明显新引入 Bug 风险，属于外围视觉增强。
+
+### Next
+- 进入 B 阶段深度，特别是评估 B2 (玩家生命值与失败惩罚)，看惩罚曲线是否合理，是否需要做“金铲铲式”随阶段等级放大的失败伤害。
