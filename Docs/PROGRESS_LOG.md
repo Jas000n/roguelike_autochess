@@ -323,3 +323,8 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 跑多几关“真实回归”和烟雾测试，确保在对赌协议触发后，金币的利息实加与 UI 预显示的数字完全一致（不吞钱或多发）。
 2. 在海克斯页面补上“查看备战席”按钮，方便玩家拿构筑奇物前回顾自有阵容。
+
+## 2026-03-11 21:49 EST
+### Done
+- （心跳）确认当前重点在 Stage B3 的 UI 增强项部分，金币利息显示已经更新。
+- 继续保持代码纯净度和回归可用性。
