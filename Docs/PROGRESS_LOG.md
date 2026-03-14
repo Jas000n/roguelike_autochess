@@ -574,3 +574,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 1. 增加“混合棋盘锚点”用例（场上+备战席同时存在时，升星后位置与归属稳定）。
 2. 增加“已有3★后商店过滤”专项断言，避免重复无效抽取回归。
 3. 继续 Stage B1 收口并准备标记完成条件。
+
+## 2026-03-14 00:21 EST
+### Done
+- 新增 Stage B1 商店过滤专项回归：`DevRunThreeStarShopFilterSmokeTest()`。
+- 在测试中先构造目标单位 3★ 持有态，再连续免费刷新商店 30 轮，断言该 key 不会再次出现在 `shopOffers`。
+- 将该专项接入 Batch 总入口 `DevRunRegression3FloorsBatch()`，当前 Batch 覆盖：
+  - 3关流程回归
+  - UI 烟雾回归
+  - 升星链专项
+  - 已有3★商店过滤专项
+
+### Verify
+- Batch 关键日志：
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:82 gold:82`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][STAR_SMOKE] pass=2 fail=0 key=cannon_burst`
+  - `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=cannon_burst`
+  - `[DEV][BATCH] DevRunRegression3FloorsBatch finished`
+
+### Found / Risks
+- 过滤专项采用随机 key + 多轮刷新验证，能有效抓回归；但仍是概率式覆盖，后续可补 deterministic seed 方案提升复现稳定性。
+
+### Next
+1. 增加“混合棋盘锚点”专项（场上/备战席混合时合成后位置归属正确）。
+2. 在 Batch 回归中增加失败汇总与退出码（CI 友好）。
+3. 继续 Stage B1 完整升星链收口，并准备更新 DEV_LOOP 当前执行状态。

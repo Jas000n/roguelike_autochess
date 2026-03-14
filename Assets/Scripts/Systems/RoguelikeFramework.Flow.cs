@@ -167,6 +167,7 @@ public partial class RoguelikeFramework
         framework.DevRunRegression3Floors();
         framework.DevRunUiSmokeTest();
         framework.DevRunStarMergeSmokeTest();
+        framework.DevRunThreeStarShopFilterSmokeTest();
 
         Debug.Log("[DEV][BATCH] DevRunRegression3FloorsBatch finished");
     }
@@ -401,6 +402,61 @@ public partial class RoguelikeFramework
             $"1★={oneStarAfterSecond},2★={twoStarAfterSecond},3★={threeStarAfterSecond}");
 
         string summary = $"[DEV][STAR_SMOKE] pass={pass} fail={fail} key={key}";
+        battleLog = summary;
+        Debug.Log(summary);
+    }
+
+    private void DevRunThreeStarShopFilterSmokeTest()
+    {
+        int pass = 0;
+        int fail = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            if (ok) pass++;
+            else
+            {
+                fail++;
+                Debug.Log($"[DEV][SHOP_FILTER_SMOKE][FAIL] {name} | {detail}");
+            }
+        }
+
+        RestartRun();
+
+        string key = shopOffers.Count > 0 ? shopOffers[0] : (basePool.Count > 0 ? basePool[0] : "");
+        if (string.IsNullOrEmpty(key) || !unitDefs.ContainsKey(key))
+        {
+            Debug.Log("[DEV][SHOP_FILTER_SMOKE] skipped: no valid unit key");
+            return;
+        }
+
+        benchUnits.Clear();
+        deploySlots.Clear();
+
+        // 造出一个 3★ 单位，验证商店过滤逻辑不会再刷出该 key。
+        for (int i = 0; i < 9; i++) benchUnits.Add(CreateUnit(key, true));
+        AutoMergeAll();
+        Check("可构造3星持有状态", CountOwnedCopies(key, 3) == 1, $"3★={CountOwnedCopies(key, 3)}");
+
+        bool seen = false;
+        const int rounds = 30;
+        for (int i = 0; i < rounds; i++)
+        {
+            RefreshShop(true);
+            for (int j = 0; j < shopOffers.Count; j++)
+            {
+                if (shopOffers[j] == key)
+                {
+                    seen = true;
+                    break;
+                }
+            }
+            if (seen) break;
+        }
+
+        Check("已有3星后商店不再出现该棋子", !seen, $"key={key}, rounds={rounds}");
+
+        string summary = $"[DEV][SHOP_FILTER_SMOKE] pass={pass} fail={fail} key={key}";
         battleLog = summary;
         Debug.Log(summary);
     }
