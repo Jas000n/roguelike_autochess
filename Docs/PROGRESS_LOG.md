@@ -775,3 +775,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 为配置层补充“合法性校验”（重复 id、空字段、非法稀有度）并接入 Batch。
 2. 准备把配置描述升级为可资产化格式（ScriptableObject 首选）。
+
+## 2026-03-14 04:21 EDT
+### Done
+- 继续推进 Stage A2：为轻量配置层新增统一合法性校验 `ValidateConfigData(out string error)`。
+- 校验覆盖：
+  - `HexPoolConfig`：重复 id、空字段、非法稀有度（仅允许 白/蓝/金/彩）
+  - `RewardPoolConfig`：重复 id、空字段
+  - `ShopCostOddsByLevelConfig`：1~8 级完整性、数组长度（6）、非负概率、概率和≈1
+- 将配置校验接入启动流程：`Start()` 在构建池后立即执行，失败时输出 `[DEV][CONFIG_VALIDATE] FAILED ...` 并抛异常；通过时输出 `[DEV][CONFIG_VALIDATE] pass=1 fail=0`。
+
+### Verify
+- 执行 Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_config_validate.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][STAR_SMOKE] pass=2 fail=0 key=soldier_guard`
+  - `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=soldier_guard`
+  - `[DEV][ANCHOR_SMOKE] pass=2 fail=0 key=soldier_sword`
+  - `[DEV][ANCHOR3_SMOKE] pass=3 fail=0 key=soldier_sword`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 将 `ValidateConfigData` 的错误明细前置到编辑器可视化入口（如 DevTools 面板）以便策划快速定位。
+2. 准备 A2 下一步：将配置描述迁移为 ScriptableObject 资产并保持现有 Batch 门禁。

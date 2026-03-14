@@ -161,4 +161,90 @@ public partial class RoguelikeFramework
     {
         return RewardPoolConfig;
     }
+
+    private bool ValidateConfigData(out string error)
+    {
+        error = "";
+
+        var hexIds = new HashSet<string>();
+        var validHexRarity = new HashSet<string> { "白", "蓝", "金", "彩" };
+        for (int i = 0; i < HexPoolConfig.Length; i++)
+        {
+            var h = HexPoolConfig[i];
+            if (string.IsNullOrWhiteSpace(h.Id))
+            {
+                error = $"HexPoolConfig[{i}] id 为空";
+                return false;
+            }
+            if (!hexIds.Add(h.Id))
+            {
+                error = $"HexPoolConfig 存在重复 id: {h.Id}";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(h.Name) || string.IsNullOrWhiteSpace(h.Desc))
+            {
+                error = $"HexPoolConfig[{i}]({h.Id}) name/desc 为空";
+                return false;
+            }
+            if (!validHexRarity.Contains(h.Rarity))
+            {
+                error = $"HexPoolConfig[{i}]({h.Id}) 稀有度非法: {h.Rarity}";
+                return false;
+            }
+        }
+
+        var rewardIds = new HashSet<string>();
+        for (int i = 0; i < RewardPoolConfig.Length; i++)
+        {
+            var r = RewardPoolConfig[i];
+            if (string.IsNullOrWhiteSpace(r.Id))
+            {
+                error = $"RewardPoolConfig[{i}] id 为空";
+                return false;
+            }
+            if (!rewardIds.Add(r.Id))
+            {
+                error = $"RewardPoolConfig 存在重复 id: {r.Id}";
+                return false;
+            }
+            if (string.IsNullOrWhiteSpace(r.Name) || string.IsNullOrWhiteSpace(r.Desc))
+            {
+                error = $"RewardPoolConfig[{i}]({r.Id}) name/desc 为空";
+                return false;
+            }
+        }
+
+        for (int level = 1; level <= 8; level++)
+        {
+            if (!ShopCostOddsByLevelConfig.TryGetValue(level, out var odds))
+            {
+                error = $"ShopCostOddsByLevelConfig 缺少 level={level}";
+                return false;
+            }
+            if (odds == null || odds.Length != 6)
+            {
+                error = $"ShopCostOddsByLevelConfig[{level}] 长度非法（期望6）";
+                return false;
+            }
+
+            float sum = 0f;
+            for (int i = 0; i < odds.Length; i++)
+            {
+                if (odds[i] < 0f)
+                {
+                    error = $"ShopCostOddsByLevelConfig[{level}][{i}] 为负数";
+                    return false;
+                }
+                sum += odds[i];
+            }
+
+            if (Mathf.Abs(sum - 1f) > 0.01f)
+            {
+                error = $"ShopCostOddsByLevelConfig[{level}] 概率和异常: {sum:F3}";
+                return false;
+            }
+        }
+
+        return true;
+    }
 }
