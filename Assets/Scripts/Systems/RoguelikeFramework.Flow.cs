@@ -126,6 +126,104 @@ public partial class RoguelikeFramework
         }
     }
 
+    // 开发开关：快速从地图进入可操作的准备阶段。
+    private void DevQuickStartToPrepare()
+    {
+        if (state == RunState.GameOver) RestartRun();
+
+        if (state != RunState.Stage)
+        {
+            RestartRun();
+        }
+
+        var choices = GetAvailableStageNodes();
+        if (choices.Count == 0)
+        {
+            battleLog = "[DEV] 快速开局失败：无可用节点";
+            return;
+        }
+
+        SelectStageNode(choices[0].id);
+
+        int safety = 10;
+        while (safety-- > 0 && state != RunState.Prepare && state != RunState.GameOver)
+        {
+            if (state == RunState.Reward)
+            {
+                if (currentRewardOffers.Count == 0) RollRewardOffers();
+                PickReward(0);
+                continue;
+            }
+
+            if (state == RunState.Hex)
+            {
+                if (currentHexOffers.Count == 0) RollHexOffers();
+                PickHex(0);
+                continue;
+            }
+
+            if (state == RunState.Stage)
+            {
+                choices = GetAvailableStageNodes();
+                if (choices.Count == 0) break;
+                SelectStageNode(choices[0].id);
+                continue;
+            }
+
+            break;
+        }
+
+        battleLog = state == RunState.Prepare
+            ? "[DEV] 快速开局完成：已进入准备阶段"
+            : $"[DEV] 快速开局结束：state={state}";
+    }
+
+    // 开发开关：跳过当前关（强制胜利并自动处理奖励/海克斯）。
+    private void DevSkipCurrentFloor()
+    {
+        int beforeFloor = stageIndex;
+        int safety = 20;
+
+        while (safety-- > 0)
+        {
+            switch (state)
+            {
+                case RunState.Stage:
+                    var choices = GetAvailableStageNodes();
+                    if (choices.Count == 0) { battleLog = "[DEV] 跳关失败：无可选节点"; return; }
+                    SelectStageNode(choices[0].id);
+                    break;
+                case RunState.Prepare:
+                    if (deploySlots.Count == 0) AutoDeployFallback();
+                    StartBattle();
+                    break;
+                case RunState.Battle:
+                    if (battleStarted) EndBattle(true);
+                    else StartBattle();
+                    break;
+                case RunState.Reward:
+                    if (currentRewardOffers.Count == 0) RollRewardOffers();
+                    PickReward(0);
+                    break;
+                case RunState.Hex:
+                    if (currentHexOffers.Count == 0) RollHexOffers();
+                    PickHex(0);
+                    break;
+                case RunState.GameOver:
+                    battleLog = "[DEV] 跳关结束：章节已结束";
+                    return;
+            }
+
+            if (stageIndex > beforeFloor && (state == RunState.Stage || state == RunState.Prepare))
+            {
+                battleLog = $"[DEV] 跳关完成：{beforeFloor + 1} -> {stageIndex + 1}";
+                return;
+            }
+        }
+
+        battleLog = $"[DEV] 跳关超时：state={state}, floor={stageIndex + 1}";
+    }
+
     private void RestartRun()
     {
         BuildLinearStages();
@@ -262,6 +360,15 @@ public partial class RoguelikeFramework
 
         RestartRun();
         Check("重开后状态=Stage", state == RunState.Stage, $"state={state}");
+
+        DevQuickStartToPrepare();
+        Check("快速开局可进入准备", state == RunState.Prepare, $"state={state}");
+
+        int floorBeforeSkip = stageIndex;
+        DevSkipCurrentFloor();
+        Check("跳关可推进楼层", stageIndex > floorBeforeSkip, $"before={floorBeforeSkip}, after={stageIndex}, state={state}");
+
+        if (state != RunState.Stage) RestartRun();
 
         var firstChoices = GetAvailableStageNodes();
         if (firstChoices.Count > 0) SelectStageNode(firstChoices[0].id);

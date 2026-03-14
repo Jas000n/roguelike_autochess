@@ -985,3 +985,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 继续 A3：补“快速开局/跳关”型开发开关（减少手工点击与状态切换成本）。
 2. 将新增 A3 开关补进 UI 烟雾回归断言（至少验证开关可触发且不破坏主流程）。
+
+## 2026-03-14 08:51 EDT
+### Done
+- 完成 A3 本轮目标：新增“快速开局/跳关”开发开关，并接入键鼠双入口。
+- 新增开发方法（`RoguelikeFramework.Flow.cs`）：
+  - `DevQuickStartToPrepare()`：从 Stage 快速进入可操作的 Prepare（自动处理宝箱/海克斯中间态）
+  - `DevSkipCurrentFloor()`：当前关强制胜利并自动处理奖励/海克斯，直到楼层推进
+- 输入与 UI 接入：
+  - 热键：`F9`（快速开局）、`F10`（跳关胜利）
+  - DevTools 按钮：`快速开局(F9)`、`跳关胜利(F10)`
+- 同步增强 UI 烟雾回归：
+  - 新增断言“快速开局可进入准备”
+  - 新增断言“跳关可推进楼层”
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_a3_quickstart_skip.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:85`
+  - `[DEV][UI_SMOKE] pass=15 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 继续 A3：补“快速跳至 Boss/指定层”开关（仅开发模式），进一步压缩后期验证时间。
+2. 为 A3 新开关补最小文档（键位 + 行为 + 安全边界），避免误用影响常规体验验证。

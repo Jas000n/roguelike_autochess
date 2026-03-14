@@ -761,6 +761,10 @@ public partial class RoguelikeFramework
             {
                 DevRunBalanceIterations(50);
             }
+            if (GUI.Button(new Rect(centerX + 310f, 78 + topPad, 118, 28), "快速开局(F9)"))
+            {
+                DevQuickStartToPrepare();
+            }
             if (GUI.Button(new Rect(centerX + 560f, 78 + topPad, 124, 28), "平衡测试100轮"))
             {
                 DevRunBalanceIterations(100);
@@ -778,6 +782,10 @@ public partial class RoguelikeFramework
                 devTurboBattle = !devTurboBattle;
                 speedLevel = devTurboBattle ? 16 : 4;
                 battleLog = devTurboBattle ? "开发开关：极速战斗 x16" : "开发开关：恢复战斗速度 x4";
+            }
+            if (GUI.Button(new Rect(centerX + 686f, 46 + topPad, 136, 28), "跳关胜利(F10)"))
+            {
+                DevSkipCurrentFloor();
             }
             if (GUI.Button(new Rect(guiW - 126, 46 + topPad, 108, 28), "调试+999金"))
             {

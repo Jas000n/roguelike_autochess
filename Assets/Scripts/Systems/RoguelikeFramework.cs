@@ -186,6 +186,8 @@ public partial class RoguelikeFramework : MonoBehaviour
             speedLevel = devTurboBattle ? 16 : 4;
             battleLog = devTurboBattle ? "开发开关：极速战斗 x16" : "开发开关：恢复战斗速度 x4";
         }
+        if (Input.GetKeyDown(KeyCode.F9)) DevQuickStartToPrepare();
+        if (Input.GetKeyDown(KeyCode.F10)) DevSkipCurrentFloor();
         if (Input.GetKeyDown(KeyCode.B)) DevRunBalanceIterations(50);
         if (Input.GetKeyDown(KeyCode.N)) DevRunBalanceIterations(100);
         if (state == RunState.Prepare && Input.GetKeyDown(KeyCode.Space)) StartBattle();
