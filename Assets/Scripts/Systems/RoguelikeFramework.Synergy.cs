@@ -26,7 +26,8 @@ public partial class RoguelikeFramework
             }
         }
 
-        for (int i = 0; i < 3 && copy.Count > 0; i++)
+        int offerCount = Mathf.Min(GetHexOfferCount(false), copy.Count);
+        for (int i = 0; i < offerCount; i++)
         {
             int pick = UnityEngine.Random.Range(0, copy.Count);
             currentHexOffers.Add(copy[pick]);
@@ -68,20 +69,14 @@ public partial class RoguelikeFramework
         }
         if (pool.Count == 0) return;
 
-        int offerCount = Mathf.Min(HasHex("royal_supply") ? 3 : 2, pool.Count);
+        int offerCount = Mathf.Min(GetHexOfferCount(true), pool.Count);
         for (int i = 0; i < offerCount; i++)
         {
             int pick = UnityEngine.Random.Range(0, pool.Count);
             var h = pool[pick];
             pool.RemoveAt(pick);
             currentShopHexOffers.Add(h);
-            int cost = h.rarity switch
-            {
-                "彩" => 12,
-                "金" => 8,
-                "蓝" => 5,
-                _ => 3
-            };
+            int cost = GetShopHexCostByRarity(h.rarity);
             currentShopHexCosts.Add(cost);
         }
     }

@@ -727,3 +727,26 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 继续 A2：将奖励池/海克斯抽取权重也迁移到同一配置层。
 2. 评估配置热更新路径（ScriptableObject 优先，JSON 作为备选）。
+
+## 2026-03-14 03:21 EST
+### Done
+- 继续推进 Stage A2 配置层：把奖励/海克斯发放参数进一步外置到 `RoguelikeFramework.Config.cs`。
+- 新增配置接口并替换硬编码：
+  - `GetRewardOfferCount()`（奖励三选一数量）
+  - `GetHexOfferCount(inShop)`（战后海克斯/商店海克斯可配数量）
+  - `GetShopHexCostByRarity(rarity)`（海克斯商店按稀有度定价）
+- `Data.cs` 与 `Synergy.cs` 已改为通过配置接口读取，不再直接写死 `3` 或稀有度价格 switch。
+
+### Verify
+- Batch 回归全绿：
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:85`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][STAR_SMOKE] pass=2 fail=0 key=cannon_scout`
+  - `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=cannon_scout`
+  - `[DEV][ANCHOR_SMOKE] pass=2 fail=0 key=soldier_guard`
+  - `[DEV][ANCHOR3_SMOKE] pass=3 fail=0 key=soldier_guard`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 继续 A2：把 `BuildHexPool` / `BuildRewardPool` 的定义数据迁移到配置描述结构（保留现有逻辑接口）。
+2. 预备 ScriptableObject 化路径，减少将来策划调参改代码的频率。

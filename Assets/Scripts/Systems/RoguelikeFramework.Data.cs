@@ -575,7 +575,8 @@ public partial class RoguelikeFramework
     {
         currentRewardOffers.Clear();
         var copy = new List<RewardDef>(rewardPool);
-        for (int i = 0; i < 3 && copy.Count > 0; i++)
+        int offerCount = Mathf.Min(GetRewardOfferCount(), copy.Count);
+        for (int i = 0; i < offerCount; i++)
         {
             int idx = UnityEngine.Random.Range(0, copy.Count);
             currentRewardOffers.Add(copy[idx]);

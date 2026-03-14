@@ -44,4 +44,29 @@ public partial class RoguelikeFramework
     private const float Double4LowCostBonus = 0.5f;
     private const float LateGameHighCostBonus = 0.7f;
     private const float EarlyGameHighCostPenalty = 0.65f;
+
+    private static readonly Dictionary<string, int> ShopHexCostByRarityConfig = new()
+    {
+        { "白", 3 },
+        { "蓝", 5 },
+        { "金", 8 },
+        { "彩", 12 }
+    };
+
+    private int GetShopHexCostByRarity(string rarity)
+    {
+        if (string.IsNullOrEmpty(rarity)) return 3;
+        return ShopHexCostByRarityConfig.TryGetValue(rarity, out var cost) ? cost : 3;
+    }
+
+    private int GetRewardOfferCount()
+    {
+        return 3;
+    }
+
+    private int GetHexOfferCount(bool inShop)
+    {
+        if (inShop) return HasHex("royal_supply") ? 3 : 2;
+        return 3;
+    }
 }
