@@ -600,3 +600,28 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 1. 增加“混合棋盘锚点”专项（场上/备战席混合时合成后位置归属正确）。
 2. 在 Batch 回归中增加失败汇总与退出码（CI 友好）。
 3. 继续 Stage B1 完整升星链收口，并准备更新 DEV_LOOP 当前执行状态。
+
+## 2026-03-14 00:52 EST
+### Done
+- 新增 Stage B1“混合棋盘锚点”专项回归：`DevRunMergeAnchorSmokeTest()`。
+- 用例覆盖：2个备战席 + 1个场上同 key 1★ 触发合成后，验证：
+  - 合成结果正确（1★ 清零、2★ 数量正确）
+  - 合成产物落位保持场上锚点坐标（防止位置漂移/回落到备战席）
+- 将锚点专项接入 Batch 总入口 `DevRunRegression3FloorsBatch()`。
+
+### Verify
+- Batch 关键日志：
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][STAR_SMOKE] pass=2 fail=0 key=cannon_burst`
+  - `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=cannon_burst`
+  - `[DEV][ANCHOR_SMOKE] pass=2 fail=0 key=soldier_phalanx`
+  - `[DEV][BATCH] DevRunRegression3FloorsBatch finished`
+
+### Found / Risks
+- 锚点专项当前覆盖 1★→2★ 场景；2★→3★ 的“场上锚点优先”尚可再补一条更严格断言。
+
+### Next
+1. 补充 2★→3★ 锚点专项，确保高星合成同样保持场上落位稳定。
+2. 增加 Batch 失败汇总/退出码，降低 CI 集成摩擦。
+3. 继续 Stage B1 收口并评估“完整升星链”完成条件。

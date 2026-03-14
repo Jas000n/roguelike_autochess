@@ -168,6 +168,7 @@ public partial class RoguelikeFramework
         framework.DevRunUiSmokeTest();
         framework.DevRunStarMergeSmokeTest();
         framework.DevRunThreeStarShopFilterSmokeTest();
+        framework.DevRunMergeAnchorSmokeTest();
 
         Debug.Log("[DEV][BATCH] DevRunRegression3FloorsBatch finished");
     }
@@ -457,6 +458,63 @@ public partial class RoguelikeFramework
         Check("已有3星后商店不再出现该棋子", !seen, $"key={key}, rounds={rounds}");
 
         string summary = $"[DEV][SHOP_FILTER_SMOKE] pass={pass} fail={fail} key={key}";
+        battleLog = summary;
+        Debug.Log(summary);
+    }
+
+    private void DevRunMergeAnchorSmokeTest()
+    {
+        int pass = 0;
+        int fail = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            if (ok) pass++;
+            else
+            {
+                fail++;
+                Debug.Log($"[DEV][ANCHOR_SMOKE][FAIL] {name} | {detail}");
+            }
+        }
+
+        RestartRun();
+
+        string key = shopOffers.Count > 0 ? shopOffers[0] : (basePool.Count > 0 ? basePool[0] : "");
+        if (string.IsNullOrEmpty(key) || !unitDefs.ContainsKey(key))
+        {
+            Debug.Log("[DEV][ANCHOR_SMOKE] skipped: no valid unit key");
+            return;
+        }
+
+        benchUnits.Clear();
+        deploySlots.Clear();
+
+        // 场上锚点：2个备战席 + 1个场上，同key同星触发合成后应保留在场上锚点格。
+        var b1 = CreateUnit(key, true);
+        var b2 = CreateUnit(key, true);
+        var d1 = CreateUnit(key, true);
+        d1.x = 2;
+        d1.y = 1;
+        benchUnits.Add(b1);
+        benchUnits.Add(b2);
+        deploySlots.Add(d1);
+
+        AutoMergeAll();
+
+        int c1 = CountOwnedCopies(key, 1);
+        int c2 = CountOwnedCopies(key, 2);
+        int c3 = CountOwnedCopies(key, 3);
+        Check("场上+备战席混合时可合成2星", c1 == 0 && c2 == 1 && c3 == 0, $"1★={c1},2★={c2},3★={c3}");
+
+        Unit merged2 = null;
+        for (int i = 0; i < deploySlots.Count; i++)
+        {
+            if (deploySlots[i].def.key == key && deploySlots[i].star == 2) { merged2 = deploySlots[i]; break; }
+        }
+        Check("2星合成后保持场上锚点坐标", merged2 != null && merged2.x == 2 && merged2.y == 1,
+            merged2 == null ? "no 2★ on board" : $"pos=({merged2.x},{merged2.y})");
+
+        string summary = $"[DEV][ANCHOR_SMOKE] pass={pass} fail={fail} key={key}";
         battleLog = summary;
         Debug.Log(summary);
     }
