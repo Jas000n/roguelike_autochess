@@ -769,6 +769,10 @@ public partial class RoguelikeFramework
             {
                 DevRunUiSmokeTest();
             }
+            if (GUI.Button(new Rect(centerX + 560f, 46 + topPad, 262, 28), "配置校验(运行中)"))
+            {
+                RevalidateConfigData();
+            }
             if (GUI.Button(new Rect(guiW - 126, 46 + topPad, 108, 28), "调试+999金"))
             {
                 gold += 999;

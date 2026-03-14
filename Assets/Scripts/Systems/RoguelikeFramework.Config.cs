@@ -162,6 +162,21 @@ public partial class RoguelikeFramework
         return RewardPoolConfig;
     }
 
+    private void RevalidateConfigData()
+    {
+        if (ValidateConfigData(out var error))
+        {
+            configValidationStatus = "pass=1 fail=0";
+            battleLog = "[DEV][CONFIG_VALIDATE] 配置校验通过";
+            Debug.Log("[DEV][CONFIG_VALIDATE] pass=1 fail=0");
+            return;
+        }
+
+        configValidationStatus = $"FAILED: {error}";
+        battleLog = $"[DEV][CONFIG_VALIDATE] {error}";
+        Debug.LogError($"[DEV][CONFIG_VALIDATE] FAILED {error}");
+    }
+
     private bool ValidateConfigData(out string error)
     {
         error = "";

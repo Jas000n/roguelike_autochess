@@ -822,3 +822,25 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 推进 A2 下一步：抽出 ScriptableObject 配置资产骨架（先只接商店费用概率表），保持当前常量配置作为 fallback。
 2. 在 DevTools 中补一键“重新执行配置校验”按钮，便于运行中验证配置热改是否生效。
+
+## 2026-03-14 05:20 EDT
+### Done
+- 完成上一轮 Next-2：在 DevTools 增加“一键重新执行配置校验”按钮（`配置校验(运行中)`）。
+- 新增 `RevalidateConfigData()`：
+  - 复用 `ValidateConfigData(out error)`
+  - 通过时更新 `configValidationStatus=pass=1 fail=0`，并写入 `battleLog`
+  - 失败时更新 `configValidationStatus=FAILED: ...`，并写入错误日志与 `battleLog`
+- 启动流程改为调用 `RevalidateConfigData()`，并以 `configValidationStatus` 作为 gate（非 pass 则抛异常），减少校验逻辑重复。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_revalidate_button.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:75`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 推进 A2 主线：落地 ScriptableObject 配置资产骨架（先接入商店费用概率表，保留常量 fallback）。
+2. 为配置校验增加 `ShopHexCostByRarityConfig` 完整性检查（缺失白/蓝/金/彩时告警或失败）。

@@ -131,15 +131,12 @@ public partial class RoguelikeFramework : MonoBehaviour
         BuildLinearStages();
         BuildHexPool();
         BuildRewardPool();
-        if (!ValidateConfigData(out var configError))
+        RevalidateConfigData();
+        if (!configValidationStatus.StartsWith("pass="))
         {
-            configValidationStatus = $"FAILED: {configError}";
-            string msg = $"[DEV][CONFIG_VALIDATE] FAILED {configError}";
-            Debug.LogError(msg);
+            string msg = $"[DEV][CONFIG_VALIDATE] FAILED {configValidationStatus}";
             throw new InvalidOperationException(msg);
         }
-        configValidationStatus = "pass=1 fail=0";
-        Debug.Log("[DEV][CONFIG_VALIDATE] pass=1 fail=0");
 
         LoadGeneratedUnitArt();
         LoadGeneratedHexArt();
