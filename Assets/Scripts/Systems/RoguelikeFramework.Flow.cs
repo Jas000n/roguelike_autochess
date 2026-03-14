@@ -877,11 +877,19 @@ public partial class RoguelikeFramework
             if (state == RunState.Battle) EndBattle(true);
         }
 
+        spikeProbeAssassinContractHits = 0;
+        spikeProbeArtilleryOverclockHits = 0;
+        spikeProbeTriServiceHits = 0;
+
         RunScenario("刺客契约", "assassin_contract", "guard_assassin", "guard_mist", "horse_nightmare");
         RunScenario("炮火超频", "artillery_overclock", "cannon_missile", "cannon_sniper", "cannon_storm");
         RunScenario("三军协同", "tri_service", "cannon_missile", "cannon_venom", "soldier_oracle");
 
-        Debug.Log($"[DEV][SPIKE_SCENARIO] pass={pass} fail={fail}");
+        Check("刺客契约探针命中", spikeProbeAssassinContractHits > 0, $"hits={spikeProbeAssassinContractHits}");
+        Check("炮火超频探针命中", spikeProbeArtilleryOverclockHits > 0, $"hits={spikeProbeArtilleryOverclockHits}");
+        Check("三军协同探针命中", spikeProbeTriServiceHits > 0, $"hits={spikeProbeTriServiceHits}");
+
+        Debug.Log($"[DEV][SPIKE_SCENARIO] pass={pass} fail={fail} probeHits=A:{spikeProbeAssassinContractHits},O:{spikeProbeArtilleryOverclockHits},T:{spikeProbeTriServiceHits}");
     }
 
     private void DevRunUnitDefsIntegritySmokeTest()
@@ -1454,10 +1462,21 @@ public partial class RoguelikeFramework
         }
 
         var tags = new List<string>();
-        if (HasHex("assassin_contract") && assassin >= 2) tags.Add($"assassin_contract+assassin({assassin})");
-        if (HasHex("artillery_overclock") && artillery >= 2) tags.Add($"artillery_overclock+artillery({artillery})");
+        if (HasHex("assassin_contract") && assassin >= 2)
+        {
+            tags.Add($"assassin_contract+assassin({assassin})");
+            spikeProbeAssassinContractHits++;
+        }
+        if (HasHex("artillery_overclock") && artillery >= 2)
+        {
+            tags.Add($"artillery_overclock+artillery({artillery})");
+            spikeProbeArtilleryOverclockHits++;
+        }
         if (HasHex("tri_service") && artillery >= 1 && controller >= 1 && medic >= 1)
+        {
             tags.Add($"tri_service+A/C/M({artillery}/{controller}/{medic})");
+            spikeProbeTriServiceHits++;
+        }
 
         if (tags.Count == 0) return;
         Debug.Log($"[DEV][SPIKE_PROBE] floor={stageIndex + 1} tags={string.Join(";", tags)}");

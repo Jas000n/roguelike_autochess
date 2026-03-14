@@ -1274,3 +1274,37 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 在 C1 收口评估中纳入“多路线命中压测 + SPIKE_SCENARIO 全绿”作为质量门槛。
 2. 进入 C2 小步调参：为探针覆盖的三组组合设置轻量目标区间（例如触发频率/收益阈值），避免只看日志不看体验强度。
+
+## 2026-03-14 14:20 EDT
+### Done
+- 推进 C2 可观测门槛：将三组 Spike 探针从“仅打印日志”升级为“有阈值断言的门禁项”。
+- 在 `DevLogHexSynergySpikeProbe()` 中新增命中计数器：
+  - `spikeProbeAssassinContractHits`
+  - `spikeProbeArtilleryOverclockHits`
+  - `spikeProbeTriServiceHits`
+- 在 `DevRunSpikeProbeScenarios()` 中：
+  - 场景前清零计数器
+  - 场景后新增断言（每组 hits > 0）
+  - 汇总日志扩展为：
+    - `[DEV][SPIKE_SCENARIO] pass=<x> fail=<y> probeHits=A:<n>,O:<n>,T:<n>`
+- 结果：C2 探针现在具备“可观测 + 可判定”的最低门禁能力，不再只是人工读日志。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c2_probe_threshold.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][COMP_HIT_PROBE] pass=2 fail=0 rounds=24 comp=steel_reroll`
+  - `[DEV][COMP_HIT_PROBE] pass=2 fail=0 rounds=24 comp=control_battery`
+  - `[DEV][COMP_HIT_PROBE] pass=2 fail=0 rounds=24 comp=holy_recovery`
+  - `[DEV][SPIKE_PROBE] floor=1 tags=assassin_contract+assassin(3)`
+  - `[DEV][SPIKE_PROBE] floor=1 tags=artillery_overclock+artillery(2)`
+  - `[DEV][SPIKE_PROBE] floor=1 tags=tri_service+A/C/M(1/1/1)`
+  - `[DEV][SPIKE_SCENARIO] pass=15 fail=0 probeHits=A:1,O:1,T:1`
+  - `[DEV][UNITDEF_SMOKE] pass=299 fail=0 count=37`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 在 C2 继续小步：给三组 spike 增加“收益强度”统计（如回合伤害占比/击杀贡献），避免只验证触发不验证效果。
+2. 评估是否将 C1 收口标准写回 `DEV_LOOP.md`（门槛显式化，后续阶段更稳）。

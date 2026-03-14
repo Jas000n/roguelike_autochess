@@ -71,6 +71,9 @@ public partial class RoguelikeFramework
     private int compHitObsRefreshes;
     private int compHitObsClassSlots;
     private int compHitObsOriginSlots;
+    private int spikeProbeAssassinContractHits;
+    private int spikeProbeArtilleryOverclockHits;
+    private int spikeProbeTriServiceHits;
     private readonly HashSet<string> compMilestoneRewarded = new();
 
     private int draggingDeploy = -1;
