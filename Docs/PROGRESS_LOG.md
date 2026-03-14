@@ -960,3 +960,28 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 评估并定义 Stage A2 收口标准（资产化入口 + 回退机制 + 运行中重校验 + Batch 门禁全绿）。
 2. 满足收口标准后，更新 `DEV_LOOP.md` 的 Current Execution 勾选状态并开始准备 Stage A3（开发期开关完善）。
+
+## 2026-03-14 08:20 EDT
+### Done
+- 完成 A2 收口动作：
+  - 更新 `Docs/DEV_LOOP.md`：`Stage A2` 标记为完成，新增 `Stage A3` 为当前待推进项。
+- 启动 A3（开发期开关）第一步：新增“极速战斗”开关，支持键鼠两入口：
+  - 热键：`F8` 开/关极速战斗
+  - DevTools 按钮：`开启/关闭极速战斗(F8)`
+- 实现细节：
+  - 新增 `devTurboBattle` 状态
+  - 开启时 `speedLevel=16`，关闭时恢复 `speedLevel=4`
+  - 通过 `battleLog` 显示切换反馈，便于回归观测
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_a3_turbo_switch.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 继续 A3：补“快速开局/跳关”型开发开关（减少手工点击与状态切换成本）。
+2. 将新增 A3 开关补进 UI 烟雾回归断言（至少验证开关可触发且不破坏主流程）。

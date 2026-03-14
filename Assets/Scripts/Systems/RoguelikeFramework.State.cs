@@ -49,6 +49,7 @@ public partial class RoguelikeFramework
     private readonly float baseTurnInterval = 0.55f;
     private int turnIndex;
     private int speedLevel = 4;
+    private bool devTurboBattle;
     private string battleLog = "v0.1 -> v0.2~0.3 进行中";
     private int lastEmergencyStage = -1;
     private readonly List<string> recentEvents = new();

@@ -180,6 +180,12 @@ public partial class RoguelikeFramework : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F5)) DevRunBalanceIterations(50);
         if (Input.GetKeyDown(KeyCode.F6)) DevRunBalanceIterations(100);
         if (Input.GetKeyDown(KeyCode.F7)) DevRunUiSmokeTest();
+        if (Input.GetKeyDown(KeyCode.F8))
+        {
+            devTurboBattle = !devTurboBattle;
+            speedLevel = devTurboBattle ? 16 : 4;
+            battleLog = devTurboBattle ? "开发开关：极速战斗 x16" : "开发开关：恢复战斗速度 x4";
+        }
         if (Input.GetKeyDown(KeyCode.B)) DevRunBalanceIterations(50);
         if (Input.GetKeyDown(KeyCode.N)) DevRunBalanceIterations(100);
         if (state == RunState.Prepare && Input.GetKeyDown(KeyCode.Space)) StartBattle();

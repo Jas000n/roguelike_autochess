@@ -773,6 +773,12 @@ public partial class RoguelikeFramework
             {
                 RevalidateConfigData();
             }
+            if (GUI.Button(new Rect(centerX + 560f, 14 + topPad, 262, 28), devTurboBattle ? "关闭极速战斗(F8)" : "开启极速战斗(F8)"))
+            {
+                devTurboBattle = !devTurboBattle;
+                speedLevel = devTurboBattle ? 16 : 4;
+                battleLog = devTurboBattle ? "开发开关：极速战斗 x16" : "开发开关：恢复战斗速度 x4";
+            }
             if (GUI.Button(new Rect(guiW - 126, 46 + topPad, 108, 28), "调试+999金"))
             {
                 gold += 999;
