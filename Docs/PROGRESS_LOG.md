@@ -1339,3 +1339,32 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 在 C2 继续补“击杀贡献”指标（按组合关键单位累计击杀数），与 `share` 形成双维度收益观察。
 2. 将 C1 收口标准沉淀到 `DEV_LOOP.md` 或 `Docs/devloop`（显式门槛，便于后续迭代复用）。
+
+## 2026-03-14 15:20 EDT
+### Done
+- 完成上一轮 Next-1：为 C2 spike 场景补充“击杀贡献”维度，并写入收益日志。
+- 代码改动：
+  - `Unit` 新增 `kills` 统计字段（战斗克隆初始化为 0）
+  - `ApplyDamageWithTraits()` 在击杀发生时累加 `from.kills`
+  - `DevRunSpikeProbeScenarios()` 在每个场景统计：
+    - `totalKills / keyKills / killShare`
+    - 并追加到 `SPIKE_EFFECT` 日志
+  - 当 `totalKills > 0` 时增加断言：关键组合必须有击杀贡献（`keyKills > 0`）
+- 结果：C2 观测从“触发 + 伤害占比”升级到“触发 + 伤害 + 击杀”三维。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c2_kill_share.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][SPIKE_EFFECT] 刺客契约 ... share=1.00 totalKills=0 keyKills=0 killShare=0.00`
+  - `[DEV][SPIKE_EFFECT] 炮火超频 ... share=0.40 totalKills=0 keyKills=0 killShare=0.00`
+  - `[DEV][SPIKE_EFFECT] 三军协同 ... share=0.00 totalKills=0 keyKills=0 killShare=0.00`
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 probeHits=A:1,O:1,T:1`
+  - `[DEV][UNITDEF_SMOKE] pass=299 fail=0 count=37`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 由于当前 6 回合窗口下 `totalKills` 多为 0，下一步考虑在 spike 场景里延长回合窗口或下调敌方血量系数，以提高击杀样本有效性。
+2. 将 C1 收口标准沉淀到 `Docs/devloop`，把“单位规模+多路线命中+门禁全绿”固化为后续内容扩展模板。

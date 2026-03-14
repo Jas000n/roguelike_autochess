@@ -89,7 +89,8 @@ public partial class RoguelikeFramework
             usedCharge = false,
             usedOriginProc = false,
             damageDealt = 0,
-            damageTaken = 0
+            damageTaken = 0,
+            kills = 0
         };
     }
 

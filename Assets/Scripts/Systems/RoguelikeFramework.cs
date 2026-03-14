@@ -55,6 +55,7 @@ public partial class RoguelikeFramework : MonoBehaviour
 
         public int damageDealt;
         public int damageTaken;
+        public int kills;
 
         public string Name => def != null ? def.name : "?";
         public string Family => def != null ? def.family : "?";

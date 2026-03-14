@@ -159,6 +159,31 @@ public partial class RoguelikeFramework
                 battleLog += $" | 连发 -{real2}";
                 PushEvent($"[{actor.Name}] 连发追击 -{real2}");
             }
+            if (actor.def.key == "cannon_storm")
+            {
+                var splashTargets = actor.player ? enemyUnits : playerUnits;
+                Unit farTarget = null;
+                int bestDist = -1;
+                for (int i = 0; i < splashTargets.Count; i++)
+                {
+                    var t = splashTargets[i];
+                    if (!t.Alive || t.id == target.id) continue;
+                    int d = Mathf.Abs(actor.x - t.x) + Mathf.Abs(actor.y - t.y);
+                    if (d > bestDist)
+                    {
+                        bestDist = d;
+                        farTarget = t;
+                    }
+                }
+                if (farTarget != null)
+                {
+                    int stormDmg = Mathf.Max(3, Mathf.RoundToInt(real * 0.45f));
+                    ApplyDamageWithTraits(actor, farTarget, stormDmg);
+                    SpawnProjectile(actor, farTarget, new Color(1f, 0.58f, 0.22f), 0.22f, 0.12f);
+                    SpawnHitFlash(farTarget, new Color(1f, 0.75f, 0.3f), 0.95f);
+                    battleLog += $" | 天幕溅射-{stormDmg}";
+                }
+            }
             if (HasHex("artillery_overclock") && actor.ClassTag == "Artillery" && battleStartedTurn % 4 == 0)
             {
                 var splashTargets = actor.player ? enemyUnits : playerUnits;
@@ -304,9 +329,35 @@ public partial class RoguelikeFramework
         if (target == null) return;
 
         float healScale = medic >= 4 ? 0.16f : medic >= 2 ? 0.08f : 0.05f;
+        if (HasHex("medic_banner")) healScale += 0.05f;
         int heal = Mathf.Max(3, Mathf.RoundToInt(target.maxHp * healScale));
         target.hp = Mathf.Min(target.maxHp, target.hp + heal);
+        SpawnHitFlash(target, new Color(0.46f, 0.92f, 0.62f), 0.75f);
         battleLog = $"{actor.Name} 治疗 {target.Name} +{heal}";
+
+        if (actor.def.key == "ele_sage")
+        {
+            Unit second = null;
+            float secondRatio = 1.1f;
+            for (int i = 0; i < team.Count; i++)
+            {
+                var ally = team[i];
+                if (!ally.Alive || ally.id == target.id || ally.hp >= ally.maxHp) continue;
+                float ratio = ally.maxHp > 0 ? ally.hp / (float)ally.maxHp : 1f;
+                if (ratio < secondRatio)
+                {
+                    secondRatio = ratio;
+                    second = ally;
+                }
+            }
+            if (second != null)
+            {
+                int echoHeal = Mathf.Max(2, Mathf.RoundToInt(second.maxHp * (healScale * 0.65f)));
+                second.hp = Mathf.Min(second.maxHp, second.hp + echoHeal);
+                SpawnHitFlash(second, new Color(0.68f, 0.9f, 1f), 0.82f);
+                battleLog += $" | 灵象回响+{echoHeal}";
+            }
+        }
     }
 
     private Unit NearestAlive(Unit from, List<Unit> list)
@@ -356,6 +407,7 @@ public partial class RoguelikeFramework
         from.damageDealt += dmg;
         to.damageTaken += dmg;
         bool killed = to.hp <= 0;
+        if (killed) from.kills += 1;
 
         if (HasHex("lifesteal_core") && from.Alive && dmg > 0)
         {

@@ -885,11 +885,14 @@ public partial class RoguelikeFramework
 
                 int totalDmg = 0;
                 int keyDmg = 0;
+                int totalKills = 0;
+                int keyKills = 0;
                 for (int i = 0; i < playerUnits.Count; i++)
                 {
                     var u = playerUnits[i];
                     if (u == null) continue;
                     totalDmg += u.damageDealt;
+                    totalKills += u.kills;
                     bool match = hexId switch
                     {
                         "assassin_contract" => u.ClassTag == "Assassin",
@@ -897,11 +900,16 @@ public partial class RoguelikeFramework
                         "tri_service" => u.ClassTag == "Artillery" || u.ClassTag == "Controller" || u.ClassTag == "Medic",
                         _ => false
                     };
-                    if (match) keyDmg += u.damageDealt;
+                    if (match)
+                    {
+                        keyDmg += u.damageDealt;
+                        keyKills += u.kills;
+                    }
                 }
 
                 float share = totalDmg > 0 ? keyDmg / (float)totalDmg : 0f;
-                Debug.Log($"[DEV][SPIKE_EFFECT] {name} turns={turns - 1} totalDmg={totalDmg} keyDmg={keyDmg} share={share:F2}");
+                float killShare = totalKills > 0 ? keyKills / (float)totalKills : 0f;
+                Debug.Log($"[DEV][SPIKE_EFFECT] {name} turns={turns - 1} totalDmg={totalDmg} keyDmg={keyDmg} share={share:F2} totalKills={totalKills} keyKills={keyKills} killShare={killShare:F2}");
                 if (totalDmg > 0)
                 {
                     Check($"{name}: 关键组合有输出", keyDmg > 0, $"total={totalDmg}, key={keyDmg}, share={share:F2}");
@@ -909,6 +917,10 @@ public partial class RoguelikeFramework
                 else
                 {
                     Check($"{name}: 进行了回合推进", turns > 1, $"turns={turns - 1}");
+                }
+                if (totalKills > 0)
+                {
+                    Check($"{name}: 关键组合有击杀贡献", keyKills > 0, $"totalKills={totalKills}, keyKills={keyKills}, share={killShare:F2}");
                 }
 
                 if (state == RunState.Battle) EndBattle(true);
