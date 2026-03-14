@@ -685,3 +685,22 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 1. 在仓库补一份回归命令文档（本地/CI 同步）。
 2. 将 Stage B1 完整升星链标记为完成（当前专项覆盖已较完整）。
 3. 按 DEV_LOOP 进入 Stage A2（轻量配置数据层）准备拆分。
+
+## 2026-03-14 02:21 EST
+### Done
+- 根据当前专项回归覆盖与稳定性结果，将 `DEV_LOOP.md` 中 `Stage B1 完整升星链` 标记为完成。
+- 在 `Current Execution` 增加下一项：`Stage A2 轻量配置数据层（数值/掉落权重外置）`，作为后续连续开发入口。
+- 执行 Batch 全回归确认状态切换无回退。
+
+### Verify
+- `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+- `[DEV][UI_SMOKE] pass=13 fail=0`
+- `[DEV][STAR_SMOKE] pass=2 fail=0 key=soldier_sword`
+- `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=soldier_sword`
+- `[DEV][ANCHOR_SMOKE] pass=2 fail=0 key=horse_lancer`
+- `[DEV][ANCHOR3_SMOKE] pass=3 fail=0 key=horse_lancer`
+- `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 进入 Stage A2：提取商店费用概率与掉落权重配置到轻量数据层（先 ScriptableObject 或 JSON 常量层）。
+2. 保持现有 Batch 回归为门禁，确保外置配置不会破坏流程与升星链。
