@@ -1056,3 +1056,28 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 进入 Stage C1：扩单位到可构筑规模（先完成 21+ 单位框架的数值与标签一致性校验）。
 2. 在现有 Batch 基础上补一条“单位定义完整性”专项（cost/class/origin/range 合法性），防止扩单位阶段引入脏数据。
+
+## 2026-03-14 10:20 EDT
+### Done
+- 启动 Stage C1 首轮：新增“单位定义完整性”专项回归并接入 Batch 门禁。
+- 新增 `DevRunUnitDefsIntegritySmokeTest()`（`RoguelikeFramework.Flow.cs`），覆盖：
+  - 单位总量门槛：`unitDefs.Count >= 21`
+  - `basePool` 与 `unitDefs` 数量一致
+  - `basePool` key 去重检查
+  - 每个单位的字段合法性：`name/class/origin` 非空，`cost(1~5)`、`hp/atk/spd > 0`、`range(1~6)`
+- 将该专项纳入 `DevRunRegression3FloorsBatch()`，形成“流程/交互/升星/配置/单位定义”统一门禁。
+- 更新 `Docs/DEV_LOOP.md` 的 Current Execution，新增 Stage C1 待办项。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c1_unitdef_smoke.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][UNITDEF_SMOKE] pass=251 fail=0 count=31`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C1 主线推进：按职业/阵营缺口补一批新单位定义，优先填平冷门组合（Medic/Controller 与非主流 Origin）。
+2. 在单位扩充后继续用 `UNITDEF_SMOKE + UI_SMOKE + 3关回归` 做门禁，确保“扩内容不破流程”。

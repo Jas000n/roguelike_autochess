@@ -323,6 +323,7 @@ public partial class RoguelikeFramework
         framework.DevRunThreeStarShopFilterSmokeTest();
         framework.DevRunMergeAnchorSmokeTest();
         framework.DevRunMergeAnchorThreeStarSmokeTest();
+        framework.DevRunUnitDefsIntegritySmokeTest();
 
         if (framework.devBatchFailCount > 0)
         {
@@ -775,6 +776,50 @@ public partial class RoguelikeFramework
         string summary = $"[DEV][ANCHOR3_SMOKE] pass={pass} fail={fail} key={key}";
         battleLog = summary;
         Debug.Log(summary);
+    }
+
+    private void DevRunUnitDefsIntegritySmokeTest()
+    {
+        int pass = 0;
+        int fail = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            if (ok) pass++;
+            else
+            {
+                fail++;
+                devBatchFailCount++;
+                Debug.Log($"[DEV][UNITDEF_SMOKE][FAIL] {name} | {detail}");
+            }
+        }
+
+        Check("单位数量>=21", unitDefs.Count >= 21, $"count={unitDefs.Count}");
+        Check("basePool 与 unitDefs 数量一致", basePool.Count == unitDefs.Count, $"basePool={basePool.Count}, unitDefs={unitDefs.Count}");
+
+        var dup = new HashSet<string>();
+        bool unique = true;
+        foreach (var key in basePool)
+        {
+            if (!dup.Add(key)) { unique = false; break; }
+        }
+        Check("basePool key 唯一", unique, "basePool 存在重复 key");
+
+        foreach (var kv in unitDefs)
+        {
+            var d = kv.Value;
+            string key = kv.Key;
+            Check($"{key}: name 非空", !string.IsNullOrWhiteSpace(d.name), "name 为空");
+            Check($"{key}: class 非空", !string.IsNullOrWhiteSpace(d.classTag), "classTag 为空");
+            Check($"{key}: origin 非空", !string.IsNullOrWhiteSpace(d.originTag), "originTag 为空");
+            Check($"{key}: cost 合法", d.cost >= 1 && d.cost <= 5, $"cost={d.cost}");
+            Check($"{key}: hp>0", d.hp > 0, $"hp={d.hp}");
+            Check($"{key}: atk>0", d.atk > 0, $"atk={d.atk}");
+            Check($"{key}: spd>0", d.spd > 0, $"spd={d.spd}");
+            Check($"{key}: range 合法", d.range >= 1 && d.range <= 6, $"range={d.range}");
+        }
+
+        Debug.Log($"[DEV][UNITDEF_SMOKE] pass={pass} fail={fail} count={unitDefs.Count}");
     }
 
     private void DevRunBalanceIterations(int rounds)
