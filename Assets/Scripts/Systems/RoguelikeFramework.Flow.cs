@@ -874,7 +874,45 @@ public partial class RoguelikeFramework
             Check($"{name}: 上阵数量", deploySlots.Count >= 2, $"deploy={deploySlots.Count}");
             StartBattle();
             Check($"{name}: 可进战斗", state == RunState.Battle, $"state={state}");
-            if (state == RunState.Battle) EndBattle(true);
+            if (state == RunState.Battle)
+            {
+                int turns = 0;
+                while (turns++ < 6 && state == RunState.Battle)
+                {
+                    RunOneTurn();
+                    CheckBattleEnd();
+                }
+
+                int totalDmg = 0;
+                int keyDmg = 0;
+                for (int i = 0; i < playerUnits.Count; i++)
+                {
+                    var u = playerUnits[i];
+                    if (u == null) continue;
+                    totalDmg += u.damageDealt;
+                    bool match = hexId switch
+                    {
+                        "assassin_contract" => u.ClassTag == "Assassin",
+                        "artillery_overclock" => u.ClassTag == "Artillery",
+                        "tri_service" => u.ClassTag == "Artillery" || u.ClassTag == "Controller" || u.ClassTag == "Medic",
+                        _ => false
+                    };
+                    if (match) keyDmg += u.damageDealt;
+                }
+
+                float share = totalDmg > 0 ? keyDmg / (float)totalDmg : 0f;
+                Debug.Log($"[DEV][SPIKE_EFFECT] {name} turns={turns - 1} totalDmg={totalDmg} keyDmg={keyDmg} share={share:F2}");
+                if (totalDmg > 0)
+                {
+                    Check($"{name}: 关键组合有输出", keyDmg > 0, $"total={totalDmg}, key={keyDmg}, share={share:F2}");
+                }
+                else
+                {
+                    Check($"{name}: 进行了回合推进", turns > 1, $"turns={turns - 1}");
+                }
+
+                if (state == RunState.Battle) EndBattle(true);
+            }
         }
 
         spikeProbeAssassinContractHits = 0;

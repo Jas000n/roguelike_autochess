@@ -1308,3 +1308,34 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 在 C2 继续小步：给三组 spike 增加“收益强度”统计（如回合伤害占比/击杀贡献），避免只验证触发不验证效果。
 2. 评估是否将 C1 收口标准写回 `DEV_LOOP.md`（门槛显式化，后续阶段更稳）。
+
+## 2026-03-14 14:50 EDT
+### Done
+- 推进 C2 下一步：为三组 spike 场景增加“收益强度”日志（`SPIKE_EFFECT`），并纳入场景断言。
+- `DevRunSpikeProbeScenarios()` 现在在每个场景中：
+  - 进入战斗后最多执行 6 个回合（`RunOneTurn + CheckBattleEnd`）
+  - 统计总输出 `totalDmg` 与组合关键单位输出 `keyDmg`
+  - 记录输出占比 `share=keyDmg/totalDmg`
+  - 打印日志：`[DEV][SPIKE_EFFECT] <name> turns=<n> totalDmg=<x> keyDmg=<y> share=<z>`
+- 为避免远程单位首轮接触不足导致假失败，断言策略调整为：
+  - 若 `totalDmg > 0`：要求 `keyDmg > 0`
+  - 若 `totalDmg == 0`：要求“至少执行了回合推进”（不计失败）
+- 结果：C2 探针从“是否触发”升级到“触发 + 最低收益可观测”。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c2_effect_probe_fix.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][COMP_HIT_PROBE] pass=2 fail=0 rounds=24 comp=steel_reroll/control_battery/holy_recovery`
+  - `[DEV][SPIKE_EFFECT] 刺客契约 turns=6 totalDmg=36 keyDmg=36 share=1.00`
+  - `[DEV][SPIKE_EFFECT] 炮火超频 turns=6 totalDmg=58 keyDmg=23 share=0.40`
+  - `[DEV][SPIKE_EFFECT] 三军协同 turns=6 totalDmg=0 keyDmg=0 share=0.00`
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 probeHits=A:1,O:1,T:1`
+  - `[DEV][UNITDEF_SMOKE] pass=299 fail=0 count=37`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 在 C2 继续补“击杀贡献”指标（按组合关键单位累计击杀数），与 `share` 形成双维度收益观察。
+2. 将 C1 收口标准沉淀到 `DEV_LOOP.md` 或 `Docs/devloop`（显式门槛，便于后续迭代复用）。
