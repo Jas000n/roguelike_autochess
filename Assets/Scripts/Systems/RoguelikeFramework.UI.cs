@@ -791,6 +791,10 @@ public partial class RoguelikeFramework
             {
                 DevSkipToBoss();
             }
+            if (GUI.Button(new Rect(centerX + 560f, 110 + topPad, 262, 28), "路线命中压测(F12)"))
+            {
+                DevRunLockedCompHitProbe(24);
+            }
             if (GUI.Button(new Rect(guiW - 126, 46 + topPad, 108, 28), "调试+999金"))
             {
                 gold += 999;

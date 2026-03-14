@@ -1155,3 +1155,32 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 增加一个“锁定路线压测”开发入口（短轮数自动刷新并锁 comp），强制产出 `COMP_HIT` 样本，避免仅靠手工触发。
 2. 基于样本结果评估是否需要调整 `GetLockedCompClassBiasByLevel` / `LockedCompOriginBias` 的早中后期曲线。
+
+## 2026-03-14 12:20 EDT
+### Done
+- 完成上一轮 Next-1：新增“锁定路线压测”开发入口，并接入 Batch。
+- 新增方法：`DevRunLockedCompHitProbe(int refreshRounds)`（`RoguelikeFramework.Flow.cs`）
+  - 自动重开并基于当前队伍执行 `RecommendCompByBoard` 锁定路线
+  - 自动执行多轮免费刷新（默认 24 轮）以强制产出 `COMP_HIT` 样本
+  - 输出汇总日志：`[DEV][COMP_HIT_PROBE] pass=<x> fail=<y> rounds=<n> comp=<id>`
+- 入口接入：
+  - 热键：`F12`
+  - DevTools 按钮：`路线命中压测(F12)`
+  - Batch 总入口新增调用：`DevRunLockedCompHitProbe(24)`
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c1_comp_probe_entry.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][COMP_HIT] comp=control_battery lv=1 window=6 avgClass=0.40 avgOrigin=0.40`
+  - `[DEV][COMP_HIT] comp=control_battery lv=1 window=6 avgClass=0.63 avgOrigin=0.60`
+  - `[DEV][COMP_HIT_PROBE] pass=2 fail=0 rounds=24 comp=control_battery`
+  - `[DEV][UNITDEF_SMOKE] pass=299 fail=0 count=37`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 基于 `COMP_HIT` 样本评估是否需要提高早期锁定路线权重（`GetLockedCompClassBiasByLevel` / `LockedCompOriginBias`）。
+2. 若调参，先做小步改动并比较调参前后 `avgClass/avgOrigin` 变化，避免过拟合单一路线。
