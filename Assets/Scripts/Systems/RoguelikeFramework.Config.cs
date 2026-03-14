@@ -46,6 +46,14 @@ public partial class RoguelikeFramework
             return;
         }
 
+        for (int level = 1; level <= 8; level++)
+        {
+            if (runtimeMap.ContainsKey(level)) continue;
+            shopOddsConfigSource = $"fallback-const (asset missing level={level})";
+            Debug.LogWarning($"[DEV][CONFIG_VALIDATE] ShopOddsConfigAsset missing level={level}, fallback to const.");
+            return;
+        }
+
         shopOddsRuntimeOverride.Clear();
         foreach (var kv in runtimeMap) shopOddsRuntimeOverride[kv.Key] = kv.Value;
         shopOddsConfigSource = "scriptable-object";

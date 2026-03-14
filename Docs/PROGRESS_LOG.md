@@ -916,3 +916,24 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 在配置校验中追加 ScriptableObject 覆盖率检查（启用资产模式时要求覆盖 1~8 级，缺级则失败并回退常量）。
 2. 给 `ShopOddsConfigAsset` 增加 Inspector 友好提示（例如 level 排序/重复级别提示），降低误配概率。
+
+## 2026-03-14 07:19 EDT
+### Done
+- 完成上一轮 Next-1：为 ScriptableObject 路径增加覆盖率守卫。
+- 在 `EnsureShopOddsConfigLoaded()` 中新增检查：
+  - 当 `ShopOddsConfigAsset` 通过基础格式校验后，进一步要求覆盖 level 1~8 全部条目
+  - 若缺级（如缺 level=4），则记录 warning 并自动回退到常量配置（`fallback-const (asset missing level=4)`）
+- 作用：避免部分级别走资产配置、部分级别走旧常量导致的隐性平衡漂移。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_so_coverage_guard.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:93`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 推进 `ShopOddsConfigAsset` Inspector 友好化（自动按 level 排序、重复/缺级提示），降低策划误配概率。
+2. 在 DEV_LOOP 中评估 Stage A2 收口条件（配置资产化 + 回退机制 + 校验门禁）并准备打勾标准。
