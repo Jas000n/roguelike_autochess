@@ -113,6 +113,9 @@ public partial class RoguelikeFramework
     private string devPersistentPath = "";
     private string devAutoRunStatus = "idle";
     private string configValidationStatus = "not-run";
+    private string shopOddsConfigSource = "fallback-const";
+    private bool shopOddsAssetChecked;
+    private readonly Dictionary<int, float[]> shopOddsRuntimeOverride = new();
     private int devBatchFailCount;
 
     private const int W = 10;

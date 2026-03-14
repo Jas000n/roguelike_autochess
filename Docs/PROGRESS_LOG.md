@@ -866,3 +866,28 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 推进 A2 主线：开始落地 ScriptableObject 配置资产骨架（先接入商店费用概率表，保留常量 fallback）。
 2. 为 ScriptableObject 路径补最小校验与加载失败回退日志（确保策划误配不致阻塞开发流程）。
+
+## 2026-03-14 06:20 EDT
+### Done
+- 推进 A2 主线：落地 ScriptableObject 配置资产骨架（先接入商店费用概率表）。
+- 新增 `Assets/Scripts/Data/ShopOddsConfigAsset.cs`：
+  - `ShopOddsConfigAsset` + `LevelOddsEntry(level, odds[6])`
+  - 提供 `TryBuildRuntimeMap(out map, out error)`，校验长度/非负/概率和/重复 level
+- 在 `RoguelikeFramework.Config.cs` 接入可选加载路径：
+  - 启动/重校验时尝试加载 `Resources/Configs/ShopOddsConfig`
+  - 资产有效：使用 ScriptableObject 配置（`shopOddsConfigSource=scriptable-object`）
+  - 资产缺失或非法：自动回退内置常量配置并记录原因（fallback，不阻断流程）
+- `RevalidateConfigData()` 现在会重置并重载该配置源，`configValidationStatus` 带上 `shopOdds=<source>` 便于定位。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_so_shop_odds.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=fallback-const (asset missing: Resources/Configs/ShopOddsConfig)`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 新建默认 `ShopOddsConfigAsset` 资产文件（Resources 路径）并与当前常量对齐，验证 `shopOdds=scriptable-object` 路径。
+2. 在配置校验中追加 ScriptableObject 覆盖率检查（若启用资产模式，建议至少覆盖 1~8 级）。

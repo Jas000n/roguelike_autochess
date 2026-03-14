@@ -27,9 +27,36 @@ public partial class RoguelikeFramework
         };
     }
 
+    private void EnsureShopOddsConfigLoaded()
+    {
+        if (shopOddsAssetChecked) return;
+        shopOddsAssetChecked = true;
+
+        var asset = Resources.Load<ShopOddsConfigAsset>("Configs/ShopOddsConfig");
+        if (asset == null)
+        {
+            shopOddsConfigSource = "fallback-const (asset missing: Resources/Configs/ShopOddsConfig)";
+            return;
+        }
+
+        if (!asset.TryBuildRuntimeMap(out var runtimeMap, out var err))
+        {
+            shopOddsConfigSource = $"fallback-const (asset invalid: {err})";
+            Debug.LogWarning($"[DEV][CONFIG_VALIDATE] ShopOddsConfigAsset invalid, fallback to const. reason={err}");
+            return;
+        }
+
+        shopOddsRuntimeOverride.Clear();
+        foreach (var kv in runtimeMap) shopOddsRuntimeOverride[kv.Key] = kv.Value;
+        shopOddsConfigSource = "scriptable-object";
+    }
+
     private float[] GetShopCostOddsConfig(int level)
     {
+        EnsureShopOddsConfigLoaded();
+
         int lv = Mathf.Clamp(level, 1, 8);
+        if (shopOddsRuntimeOverride.TryGetValue(lv, out var runtimeOdds)) return runtimeOdds;
         return ShopCostOddsByLevelConfig.TryGetValue(lv, out var odds)
             ? odds
             : ShopCostOddsByLevelConfig[8];
@@ -164,11 +191,15 @@ public partial class RoguelikeFramework
 
     private void RevalidateConfigData()
     {
+        shopOddsAssetChecked = false;
+        shopOddsRuntimeOverride.Clear();
+        EnsureShopOddsConfigLoaded();
+
         if (ValidateConfigData(out var error))
         {
-            configValidationStatus = "pass=1 fail=0";
+            configValidationStatus = $"pass=1 fail=0 | shopOdds={shopOddsConfigSource}";
             battleLog = "[DEV][CONFIG_VALIDATE] 配置校验通过";
-            Debug.Log("[DEV][CONFIG_VALIDATE] pass=1 fail=0");
+            Debug.Log($"[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds={shopOddsConfigSource}");
             return;
         }
 
