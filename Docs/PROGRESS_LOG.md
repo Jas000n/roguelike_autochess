@@ -1036,3 +1036,23 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 为 A3 新开关补最小文档（键位 + 行为 + 安全边界），避免误用影响常规体验验证。
 2. 评估 A3 收口条件（快速开局/跳关/直达Boss/极速战斗 + 回归覆盖）并准备更新 `DEV_LOOP.md` 勾选状态。
+
+## 2026-03-14 09:49 EDT
+### Done
+- 完成上一轮两个 Next：
+  1) 新增开发开关最小文档 `Docs/devloop/DEV_SWITCHES.md`（键位、行为、安全边界、使用建议、与门禁关系）
+  2) 完成 A3 收口评估并更新 `Docs/DEV_LOOP.md`：`Stage A3` 标记为完成
+- 当前 Stage A（架构稳定化）的 A1/A2/A3 子目标均已完成并保持回归门禁全绿。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_a3_closeout.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 进入 Stage C1：扩单位到可构筑规模（先完成 21+ 单位框架的数值与标签一致性校验）。
+2. 在现有 Batch 基础上补一条“单位定义完整性”专项（cost/class/origin/range 合法性），防止扩单位阶段引入脏数据。
