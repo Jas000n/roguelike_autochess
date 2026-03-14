@@ -652,3 +652,36 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 1. 实装 Batch 回归失败汇总与退出码。
 2. 将 Stage B1 完整升星链在 `DEV_LOOP.md` 标记为完成（待退出码机制落地后）。
 3. 继续推进 Stage A2（轻量配置数据层）准备工作。
+
+## 2026-03-14 01:52 EST
+### Done
+- 为 Batch 回归新增统一失败汇总机制：`devBatchFailCount`。
+- `DevRunRegression3FloorsBatch()` 现在会：
+  - 回归前清零 `devBatchFailCount`
+  - 执行全部专项后，若 `failCount > 0` 则 `Debug.LogError + throw Exception`（供 CI 感知失败）
+  - 全通过时输出 `[DEV][BATCH] PASSED failCount=0`
+- 将以下失败路径统一计入 batch fail 计数：
+  - 主流程 3关回归未通过
+  - UI 烟雾回归断言失败
+  - 升星/商店过滤/锚点/高星锚点专项断言失败
+  - 关键用例被跳过（无有效 key）
+  - 高星锚点用例前置条件不满足（无法构造两个2★）
+
+### Verify
+- Batch 执行结果：
+  - `exit=0`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:93`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][STAR_SMOKE] pass=2 fail=0 key=guard_blade`
+  - `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=guard_blade`
+  - `[DEV][ANCHOR_SMOKE] pass=2 fail=0 key=soldier_guard`
+  - `[DEV][ANCHOR3_SMOKE] pass=3 fail=0 key=soldier_guard`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Found / Risks
+- 失败退出码机制已到位；下一步可把该命令直接接入 CI 工作流并在 PR 中强制门禁。
+
+### Next
+1. 在仓库补一份回归命令文档（本地/CI 同步）。
+2. 将 Stage B1 完整升星链标记为完成（当前专项覆盖已较完整）。
+3. 按 DEV_LOOP 进入 Stage A2（轻量配置数据层）准备拆分。

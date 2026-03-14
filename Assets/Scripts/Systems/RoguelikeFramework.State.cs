@@ -112,6 +112,7 @@ public partial class RoguelikeFramework
     private bool autoDevTriggered;
     private string devPersistentPath = "";
     private string devAutoRunStatus = "idle";
+    private int devBatchFailCount;
 
     private const int W = 10;
     private const int H = 6;

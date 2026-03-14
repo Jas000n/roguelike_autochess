@@ -163,6 +163,7 @@ public partial class RoguelikeFramework
         var go = new GameObject("DevRegressionRunner");
         var framework = go.AddComponent<RoguelikeFramework>();
 
+        framework.devBatchFailCount = 0;
         framework.Start();
         framework.DevRunRegression3Floors();
         framework.DevRunUiSmokeTest();
@@ -171,6 +172,14 @@ public partial class RoguelikeFramework
         framework.DevRunMergeAnchorSmokeTest();
         framework.DevRunMergeAnchorThreeStarSmokeTest();
 
+        if (framework.devBatchFailCount > 0)
+        {
+            string msg = $"[DEV][BATCH] FAILED failCount={framework.devBatchFailCount}";
+            Debug.LogError(msg);
+            throw new Exception(msg);
+        }
+
+        Debug.Log("[DEV][BATCH] PASSED failCount=0");
         Debug.Log("[DEV][BATCH] DevRunRegression3FloorsBatch finished");
     }
 
@@ -220,6 +229,7 @@ public partial class RoguelikeFramework
         }
 
         bool pass = stageIndex >= target;
+        if (!pass) devBatchFailCount++;
         string result = pass
             ? $"[DEV] 3关回归通过 | {startFloor + 1}->{target} | steps:{steps} | life:{playerLife} gold:{gold}"
             : $"[DEV] 3关回归未通过 | state:{state} floor:{stageIndex + 1} target:{target} steps:{steps}";
@@ -245,6 +255,7 @@ public partial class RoguelikeFramework
             else
             {
                 fail++;
+                devBatchFailCount++;
                 lines.Add($"FAIL | {name} | {detailIfFail}");
             }
         }
@@ -367,6 +378,7 @@ public partial class RoguelikeFramework
             else
             {
                 fail++;
+                devBatchFailCount++;
                 Debug.Log($"[DEV][STAR_SMOKE][FAIL] {name} | {detail}");
             }
         }
@@ -376,6 +388,7 @@ public partial class RoguelikeFramework
         string key = shopOffers.Count > 0 ? shopOffers[0] : (basePool.Count > 0 ? basePool[0] : "");
         if (string.IsNullOrEmpty(key) || !unitDefs.ContainsKey(key))
         {
+            devBatchFailCount++;
             Debug.Log("[DEV][STAR_SMOKE] skipped: no valid unit key");
             return;
         }
@@ -419,6 +432,7 @@ public partial class RoguelikeFramework
             else
             {
                 fail++;
+                devBatchFailCount++;
                 Debug.Log($"[DEV][SHOP_FILTER_SMOKE][FAIL] {name} | {detail}");
             }
         }
@@ -428,6 +442,7 @@ public partial class RoguelikeFramework
         string key = shopOffers.Count > 0 ? shopOffers[0] : (basePool.Count > 0 ? basePool[0] : "");
         if (string.IsNullOrEmpty(key) || !unitDefs.ContainsKey(key))
         {
+            devBatchFailCount++;
             Debug.Log("[DEV][SHOP_FILTER_SMOKE] skipped: no valid unit key");
             return;
         }
@@ -474,6 +489,7 @@ public partial class RoguelikeFramework
             else
             {
                 fail++;
+                devBatchFailCount++;
                 Debug.Log($"[DEV][ANCHOR_SMOKE][FAIL] {name} | {detail}");
             }
         }
@@ -483,6 +499,7 @@ public partial class RoguelikeFramework
         string key = shopOffers.Count > 0 ? shopOffers[0] : (basePool.Count > 0 ? basePool[0] : "");
         if (string.IsNullOrEmpty(key) || !unitDefs.ContainsKey(key))
         {
+            devBatchFailCount++;
             Debug.Log("[DEV][ANCHOR_SMOKE] skipped: no valid unit key");
             return;
         }
@@ -531,6 +548,7 @@ public partial class RoguelikeFramework
             else
             {
                 fail++;
+                devBatchFailCount++;
                 Debug.Log($"[DEV][ANCHOR3_SMOKE][FAIL] {name} | {detail}");
             }
         }
@@ -540,6 +558,7 @@ public partial class RoguelikeFramework
         string key = shopOffers.Count > 0 ? shopOffers[0] : (basePool.Count > 0 ? basePool[0] : "");
         if (string.IsNullOrEmpty(key) || !unitDefs.ContainsKey(key))
         {
+            devBatchFailCount++;
             Debug.Log("[DEV][ANCHOR3_SMOKE] skipped: no valid unit key");
             return;
         }
@@ -559,6 +578,7 @@ public partial class RoguelikeFramework
         Check("可生成两个2星", twoStars.Count >= 2, $"twoStars={twoStars.Count}");
         if (twoStars.Count < 2)
         {
+            devBatchFailCount++;
             Debug.Log($"[DEV][ANCHOR3_SMOKE] pass={pass} fail={fail} key={key}");
             return;
         }
