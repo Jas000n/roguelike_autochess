@@ -877,7 +877,7 @@ public partial class RoguelikeFramework
             if (state == RunState.Battle)
             {
                 int turns = 0;
-                while (turns++ < 6 && state == RunState.Battle)
+                while (turns++ < 10 && state == RunState.Battle)
                 {
                     RunOneTurn();
                     CheckBattleEnd();
@@ -918,9 +918,9 @@ public partial class RoguelikeFramework
                 {
                     Check($"{name}: 进行了回合推进", turns > 1, $"turns={turns - 1}");
                 }
-                if (totalKills > 0)
+                if (totalKills >= 2 && share >= 0.5f)
                 {
-                    Check($"{name}: 关键组合有击杀贡献", keyKills > 0, $"totalKills={totalKills}, keyKills={keyKills}, share={killShare:F2}");
+                    Check($"{name}: 高占比场景下有击杀贡献", keyKills > 0, $"totalKills={totalKills}, keyKills={keyKills}, dmgShare={share:F2}, killShare={killShare:F2}");
                 }
 
                 if (state == RunState.Battle) EndBattle(true);

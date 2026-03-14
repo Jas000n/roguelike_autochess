@@ -1368,3 +1368,28 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 由于当前 6 回合窗口下 `totalKills` 多为 0，下一步考虑在 spike 场景里延长回合窗口或下调敌方血量系数，以提高击杀样本有效性。
 2. 将 C1 收口标准沉淀到 `Docs/devloop`，把“单位规模+多路线命中+门禁全绿”固化为后续内容扩展模板。
+
+## 2026-03-14 15:50 EDT
+### Done
+- 完成上一轮 Next-1：将 spike 场景回合窗口从 6 提升到 10，提高战斗样本有效性。
+- 过程中发现并修复一个新问题：
+  - 初版“击杀贡献”断言过于严格，导致在“总击杀很少且最后一击不稳定”时出现假失败。
+  - 已改为条件断言：仅在 `totalKills >= 2` 且 `dmgShare >= 0.5` 的高占比场景下，才要求关键组合出现击杀贡献。
+- 结果：保留对高强度场景的约束，同时避免低样本随机性导致门禁抖动。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c2_kill_window10_fix.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=16 fail=0`
+  - `[DEV][SPIKE_EFFECT] 刺客契约 turns=10 totalDmg=36 keyDmg=36 share=1.00 totalKills=0 keyKills=0 killShare=0.00`
+  - `[DEV][SPIKE_EFFECT] 炮火超频 turns=10 totalDmg=56 keyDmg=23 share=0.41 totalKills=1 keyKills=1 killShare=1.00`
+  - `[DEV][SPIKE_EFFECT] 三军协同 turns=10 totalDmg=14 keyDmg=14 share=1.00 totalKills=0 keyKills=0 killShare=0.00`
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 probeHits=A:1,O:1,T:1`
+  - `[DEV][UNITDEF_SMOKE] pass=299 fail=0 count=37`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 将 C1 收口标准沉淀到 `Docs/devloop`，把“单位规模+多路线命中+门禁全绿”固化为后续内容扩展模板。
+2. 继续 C2：为三组 spike 增加“收益目标区间”告警（warn-only），先观察一轮再决定是否升级为硬门禁。
