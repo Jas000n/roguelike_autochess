@@ -492,6 +492,8 @@ public partial class RoguelikeFramework
         stageIndex = Mathf.Max(0, node.floor - 1);
         if (node.type == StageType.Mystery) RevealMysteryNode(node);
 
+        if (TryResolveMysteryEventRoom(node, false)) return;
+
         var effective = GetEffectiveStageType(node);
         if (effective == StageType.Treasure)
         {
@@ -503,6 +505,45 @@ public partial class RoguelikeFramework
         }
 
         StartPreparationForCurrentStage();
+    }
+
+    private bool TryResolveMysteryEventRoom(StageNode node, bool force)
+    {
+        if (node == null || node.type != StageType.Mystery) return false;
+
+        bool trigger = force || UnityEngine.Random.value < 0.35f;
+        if (!trigger) return false;
+
+        devEventRoomResolveCount++;
+        int roll = UnityEngine.Random.Range(0, 3);
+        switch (roll)
+        {
+            case 0:
+                gold += 6;
+                battleLog = $"奇遇：流浪商队赞助，获得 +6 金币（第{node.floor}层）";
+                break;
+            case 1:
+                playerLife = Mathf.Min(36, playerLife + 5);
+                battleLog = $"奇遇：战地祈福，恢复 +5 生命（第{node.floor}层）";
+                break;
+            default:
+                if (playerLife > 6)
+                {
+                    playerLife = Mathf.Max(1, playerLife - 3);
+                    gold += 12;
+                    battleLog = $"奇遇：黑市交易，生命 -3 金币 +12（第{node.floor}层）";
+                }
+                else
+                {
+                    gold += 4;
+                    battleLog = $"奇遇：谨慎离场，获得 +4 金币（第{node.floor}层）";
+                }
+                break;
+        }
+
+        Debug.Log($"[DEV][EVENT_ROOM] floor={node.floor} resolveCount={devEventRoomResolveCount} log={battleLog}");
+        AdvanceToStageMapFromCurrentNode();
+        return true;
     }
 
     private void AdvanceToStageMapFromCurrentNode()

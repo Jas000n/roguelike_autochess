@@ -75,6 +75,7 @@ public partial class RoguelikeFramework
     private int spikeProbeArtilleryOverclockHits;
     private int spikeProbeTriServiceHits;
     private int spikeScenarioWarnLast;
+    private int devEventRoomResolveCount;
     private readonly HashSet<string> compMilestoneRewarded = new();
 
     private int draggingDeploy = -1;

@@ -331,6 +331,7 @@ public partial class RoguelikeFramework
         {
             Debug.LogWarning($"[DEV][SOFT_GATE_WARN] spike_warn={framework.spikeScenarioWarnLast} (threshold=2)");
         }
+        framework.DevRunEventRoomPrototypeSmokeTest();
         framework.DevRunUnitDefsIntegritySmokeTest();
 
         if (framework.devBatchFailCount > 0)
@@ -959,6 +960,45 @@ public partial class RoguelikeFramework
 
         spikeScenarioWarnLast = warn;
         Debug.Log($"[DEV][SPIKE_SCENARIO] pass={pass} fail={fail} warn={warn} probeHits=A:{spikeProbeAssassinContractHits},O:{spikeProbeArtilleryOverclockHits},T:{spikeProbeTriServiceHits}");
+    }
+
+    private void DevRunEventRoomPrototypeSmokeTest()
+    {
+        int pass = 0;
+        int fail = 0;
+
+        void Check(string name, bool ok, string detail)
+        {
+            if (ok) pass++;
+            else
+            {
+                fail++;
+                devBatchFailCount++;
+                Debug.Log($"[DEV][EVENT_ROOM_SMOKE][FAIL] {name} | {detail}");
+            }
+        }
+
+        RestartRun();
+        if (!stageNodeById.TryGetValue("f3_1", out var mystery))
+        {
+            Check("存在 f3_1 神秘节点", false, "node missing");
+            Debug.Log($"[DEV][EVENT_ROOM_SMOKE] pass={pass} fail={fail}");
+            return;
+        }
+
+        currentStageNodeId = mystery.id;
+        stageIndex = mystery.floor - 1;
+        int goldBefore = gold;
+        int lifeBefore = playerLife;
+        int countBefore = devEventRoomResolveCount;
+
+        bool triggered = TryResolveMysteryEventRoom(mystery, true);
+        Check("强制触发事件房", triggered, "triggered=false");
+        Check("事件房返回地图状态", state == RunState.Stage, $"state={state}");
+        Check("事件房计数增加", devEventRoomResolveCount == countBefore + 1, $"before={countBefore}, after={devEventRoomResolveCount}");
+        Check("事件房有资源变化", gold != goldBefore || playerLife != lifeBefore, $"gold:{goldBefore}->{gold}, life:{lifeBefore}->{playerLife}");
+
+        Debug.Log($"[DEV][EVENT_ROOM_SMOKE] pass={pass} fail={fail} gold:{goldBefore}->{gold} life:{lifeBefore}->{playerLife}");
     }
 
     private void DevRunUnitDefsIntegritySmokeTest()
