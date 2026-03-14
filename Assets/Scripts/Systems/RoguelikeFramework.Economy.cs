@@ -38,13 +38,7 @@ public partial class RoguelikeFramework
         var weights = new float[pool.Count];
         for (int i = 0; i < pool.Count; i++)
         {
-            float w = pool[i].cost switch
-            {
-                1 => 1.15f,
-                2 => 1.0f,
-                3 => 0.7f,
-                _ => 0.2f
-            };
+            float w = GetOpeningUnitCostWeight(pool[i].cost);
             weights[i] = w;
             total += w;
         }
@@ -294,12 +288,12 @@ public partial class RoguelikeFramework
             var lc = GetLockedComp();
             if (lc != null)
             {
-                float stageBias = playerLevel <= 3 ? 2.2f : playerLevel <= 5 ? 1.8f : 1.4f;
+                float stageBias = GetLockedCompClassBiasByLevel(playerLevel);
                 for (int k = 0; k < lc.focusClasses.Length; k++) if (pool[i].classTag == lc.focusClasses[k]) w += stageBias;
-                for (int k = 0; k < lc.focusOrigins.Length; k++) if (pool[i].originTag == lc.focusOrigins[k]) w += 0.9f;
-                if (lc.id == "double4" && pool[i].cost <= 2) w += 0.5f;
-                if (playerLevel >= 6 && pool[i].cost >= 4) w += 0.7f;
-                if (playerLevel <= 3 && pool[i].cost >= 4) w *= 0.65f;
+                for (int k = 0; k < lc.focusOrigins.Length; k++) if (pool[i].originTag == lc.focusOrigins[k]) w += LockedCompOriginBias;
+                if (lc.id == "double4" && pool[i].cost <= 2) w += Double4LowCostBonus;
+                if (playerLevel >= 6 && pool[i].cost >= 4) w += LateGameHighCostBonus;
+                if (playerLevel <= 3 && pool[i].cost >= 4) w *= EarlyGameHighCostPenalty;
             }
 
             ws[i] = Mathf.Max(0.05f, w);
@@ -345,18 +339,7 @@ public partial class RoguelikeFramework
 
     private float[] GetShopCostOddsByLevel()
     {
-        int lv = Mathf.Clamp(playerLevel, 1, 8);
-        return lv switch
-        {
-            1 => new[] { 0f, 0.70f, 0.30f, 0f, 0f, 0f },
-            2 => new[] { 0f, 0.55f, 0.35f, 0.10f, 0f, 0f },
-            3 => new[] { 0f, 0.40f, 0.40f, 0.18f, 0.02f, 0f },
-            4 => new[] { 0f, 0.25f, 0.40f, 0.28f, 0.07f, 0f },
-            5 => new[] { 0f, 0.18f, 0.30f, 0.35f, 0.15f, 0.02f },
-            6 => new[] { 0f, 0.12f, 0.22f, 0.38f, 0.23f, 0.05f },
-            7 => new[] { 0f, 0.08f, 0.16f, 0.34f, 0.30f, 0.12f },
-            _ => new[] { 0f, 0.05f, 0.10f, 0.25f, 0.40f, 0.20f },
-        };
+        return GetShopCostOddsConfig(playerLevel);
     }
 
     private int RollShopCostByLevel()

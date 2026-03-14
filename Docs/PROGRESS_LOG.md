@@ -704,3 +704,26 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 进入 Stage A2：提取商店费用概率与掉落权重配置到轻量数据层（先 ScriptableObject 或 JSON 常量层）。
 2. 保持现有 Batch 回归为门禁，确保外置配置不会破坏流程与升星链。
+
+## 2026-03-14 02:52 EST
+### Done
+- 开始推进 Stage A2（轻量配置数据层）：新增 `Assets/Scripts/Systems/RoguelikeFramework.Config.cs`。
+- 将关键经济/掉落权重参数从 `RoguelikeFramework.Economy.cs` 中抽离到集中配置：
+  - 商店费用概率表（1~8级）
+  - 开局单位费用权重
+  - 锁定阵容的 class/origin 偏置与前后期费用偏置参数
+- `Economy` 逻辑改为调用配置接口（`GetShopCostOddsConfig` / `GetOpeningUnitCostWeight` 等），为后续外置 ScriptableObject/JSON 做过渡。
+
+### Verify
+- Batch 回归全绿：
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][STAR_SMOKE] pass=2 fail=0 key=soldier_sword`
+  - `[DEV][SHOP_FILTER_SMOKE] pass=2 fail=0 key=soldier_sword`
+  - `[DEV][ANCHOR_SMOKE] pass=2 fail=0 key=cannon_scout`
+  - `[DEV][ANCHOR3_SMOKE] pass=3 fail=0 key=cannon_scout`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 继续 A2：将奖励池/海克斯抽取权重也迁移到同一配置层。
+2. 评估配置热更新路径（ScriptableObject 优先，JSON 作为备选）。
