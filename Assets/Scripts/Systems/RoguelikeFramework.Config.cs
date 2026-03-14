@@ -260,6 +260,22 @@ public partial class RoguelikeFramework
             }
         }
 
+        string[] requiredHexRarities = { "白", "蓝", "金", "彩" };
+        for (int i = 0; i < requiredHexRarities.Length; i++)
+        {
+            string rarity = requiredHexRarities[i];
+            if (!ShopHexCostByRarityConfig.TryGetValue(rarity, out int cost))
+            {
+                error = $"ShopHexCostByRarityConfig 缺少稀有度: {rarity}";
+                return false;
+            }
+            if (cost <= 0)
+            {
+                error = $"ShopHexCostByRarityConfig[{rarity}] 价格非法: {cost}";
+                return false;
+            }
+        }
+
         return true;
     }
 }

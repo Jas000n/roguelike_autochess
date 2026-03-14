@@ -844,3 +844,25 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 推进 A2 主线：落地 ScriptableObject 配置资产骨架（先接入商店费用概率表，保留常量 fallback）。
 2. 为配置校验增加 `ShopHexCostByRarityConfig` 完整性检查（缺失白/蓝/金/彩时告警或失败）。
+
+## 2026-03-14 05:50 EDT
+### Done
+- 完成上一轮 Next-2：为配置校验新增 `ShopHexCostByRarityConfig` 完整性与合法性检查。
+- `ValidateConfigData(out error)` 现新增：
+  - 必须包含稀有度键：白/蓝/金/彩
+  - 对应价格必须为正数（`cost > 0`）
+- 这样可在配置缺项或错误定价时提前阻断启动，避免运行期商店海克斯价格异常。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_hex_cost_validate.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][ANCHOR3_SMOKE] pass=3 fail=0 key=soldier_sword`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 推进 A2 主线：开始落地 ScriptableObject 配置资产骨架（先接入商店费用概率表，保留常量 fallback）。
+2. 为 ScriptableObject 路径补最小校验与加载失败回退日志（确保策划误配不致阻塞开发流程）。
