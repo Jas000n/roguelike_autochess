@@ -15,6 +15,40 @@ public class ShopOddsConfigAsset : ScriptableObject
 
     public List<LevelOddsEntry> levels = new();
 
+    [SerializeField, TextArea(2, 5)]
+    private string inspectorValidationHint = "";
+
+    private void OnValidate()
+    {
+        levels ??= new List<LevelOddsEntry>();
+        levels.Sort((a, b) =>
+        {
+            if (ReferenceEquals(a, b)) return 0;
+            if (a == null) return 1;
+            if (b == null) return -1;
+            return a.level.CompareTo(b.level);
+        });
+
+        var seen = new HashSet<int>();
+        var dup = new List<int>();
+        foreach (var e in levels)
+        {
+            if (e == null) continue;
+            if (!seen.Add(e.level) && !dup.Contains(e.level)) dup.Add(e.level);
+        }
+
+        var missing = new List<int>();
+        for (int lv = 1; lv <= 8; lv++) if (!seen.Contains(lv)) missing.Add(lv);
+
+        if (dup.Count == 0 && missing.Count == 0) inspectorValidationHint = "OK: 覆盖 level 1~8，且无重复。";
+        else
+        {
+            string dupText = dup.Count == 0 ? "无" : string.Join(",", dup);
+            string missText = missing.Count == 0 ? "无" : string.Join(",", missing);
+            inspectorValidationHint = $"重复 level: {dupText} | 缺失 level: {missText}";
+        }
+    }
+
     public bool TryBuildRuntimeMap(out Dictionary<int, float[]> map, out string error)
     {
         map = new Dictionary<int, float[]>();

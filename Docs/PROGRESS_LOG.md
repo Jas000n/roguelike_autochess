@@ -937,3 +937,26 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 推进 `ShopOddsConfigAsset` Inspector 友好化（自动按 level 排序、重复/缺级提示），降低策划误配概率。
 2. 在 DEV_LOOP 中评估 Stage A2 收口条件（配置资产化 + 回退机制 + 校验门禁）并准备打勾标准。
+
+## 2026-03-14 07:49 EDT
+### Done
+- 完成上一轮 Next-1：增强 `ShopOddsConfigAsset` 的 Inspector 友好性，减少误配。
+- 在 `ShopOddsConfigAsset` 新增 `OnValidate()`：
+  - 自动按 `level` 升序排序 `levels`
+  - 检测重复 level
+  - 检测缺失 level（1~8）
+  - 将结果写入 Inspector 文本字段 `inspectorValidationHint`（可视化提醒）
+- 效果：策划在编辑资产时可立即看到“重复/缺级”提示，降低配置提交后才在运行时暴露问题的概率。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_shopodds_inspector_hint.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV] 3关回归通过 | 1->3 | steps:9 | life:36 gold:73`
+  - `[DEV][UI_SMOKE] pass=13 fail=0`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. 评估并定义 Stage A2 收口标准（资产化入口 + 回退机制 + 运行中重校验 + Batch 门禁全绿）。
+2. 满足收口标准后，更新 `DEV_LOOP.md` 的 Current Execution 勾选状态并开始准备 Stage A3（开发期开关完善）。
