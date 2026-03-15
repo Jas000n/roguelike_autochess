@@ -34,6 +34,8 @@ if os.path.exists(CSV_PATH):
         for i, parts in enumerate(reader, start=1):
             if not parts:
                 continue
+            if parts[0].strip().lower() == "timestamp":
+                continue
             # old format: ts,warn
             # new format: ts,warn_total,warn_assassin,warn_artillery,warn_tri_service
             warn = int(parts[1]) if len(parts) >= 2 and parts[1].strip().isdigit() else 0

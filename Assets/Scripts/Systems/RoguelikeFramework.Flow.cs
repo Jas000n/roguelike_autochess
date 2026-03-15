@@ -369,6 +369,10 @@ public partial class RoguelikeFramework
             string dir = Path.Combine(projectRoot, "Docs", "devloop");
             Directory.CreateDirectory(dir);
             string path = Path.Combine(dir, "spike_warn_history.csv");
+            if (!File.Exists(path))
+            {
+                File.WriteAllText(path, "timestamp,warn_total,warn_assassin,warn_artillery,warn_tri_service" + Environment.NewLine);
+            }
 
             string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
             string line = $"{ts},{spikeScenarioWarnLast},{spikeScenarioWarnAssassinLast},{spikeScenarioWarnArtilleryLast},{spikeScenarioWarnTriServiceLast}";
@@ -385,6 +389,7 @@ public partial class RoguelikeFramework
                 if (string.IsNullOrWhiteSpace(raw)) continue;
                 string[] parts = raw.Split(',');
                 if (parts.Length < 2) continue;
+                if (parts[0].Trim().Equals("timestamp", StringComparison.OrdinalIgnoreCase)) continue;
 
                 int w = 0;
                 if (int.TryParse(parts[1], out int parsedW)) w = Mathf.Max(0, parsedW);
