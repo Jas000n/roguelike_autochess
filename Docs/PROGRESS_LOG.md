@@ -2398,3 +2398,27 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：再观察 1~2 轮确认 `warn_runs<=2` 持续稳定。
 2. C2：若稳定延续，准备在 `DEV_LOOP.md` 将 C2 标记为“观测达标（可进入 C3 主线）”。
+
+## 2026-03-15 12:00 EDT
+### Done
+- 按 C2 收尾计划继续稳定性观察：追加 2 轮 batch 验证，并完成 recent10 新样本窗口替换。
+- 结果：recent10 达到 `warn_runs=0/10`、`warn_total=0`，短窗趋势保持全零。
+- 阶段推进：在 `Docs/DEV_LOOP.md` 将 Stage C2 标记为完成（窗口稳定），并把 Stage C3 设为当前待推进项。
+
+### Verify
+- 回归日志：
+  - `Builds/build_devloop_cycle_c2_stability_r1.log`
+  - `Builds/build_devloop_cycle_c2_stability_r2.log`
+- 关键日志：
+  - 两轮均：`[DEV][SPIKE_SCENARIO] ... warn=0 warnByHex=A:0,O:0,T:0`
+  - 两轮均：`[DEV][SPIKE_WARN_WINDOW] ... recent=10 warn_runs=0 warn_total=0 ...`
+  - 两轮均：`[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - 两轮均：`[DEV][BATCH] PASSED failCount=0`
+- 统计脚本：`python3 Docs/devloop/c2_warn_summary.py`
+  - `[recent10] warn_runs=0 warn_total=0`
+  - `bucket_share_recent10: none`
+  - `dominant_warn_bucket: none`
+
+### Next
+1. C3：开始事件房/商店房/Boss 机制差异化的下一轮小步实现（优先低风险、可回归项）。
+2. 保持每轮 batch 全链路回归，确保 C2 收敛不被后续改动破坏。
