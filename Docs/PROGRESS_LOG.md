@@ -1750,3 +1750,31 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：改为“最近10轮窗口”统计（而非累计），避免历史样本稀释近期波动；据此再评估 soft-gate 触发线。
 2. C3：继续事件结果反馈强化（可视化回显）并保持 smoke 全绿。
+
+## 2026-03-14 23:20 EDT
+### Done
+- 完成上一轮 C2 Next-1：补充“最近10轮窗口”统计工具并跑出结论。
+- 新增脚本：`Docs/devloop/c2_warn_summary.py`
+  - 自动读取 `Builds/build_devloop_cycle_c2_warn_sample_*.log`
+  - 输出全量统计 + recent10 统计 + soft-gate 建议
+- 当前统计结果：
+  - all: `samples=15 warn_runs=6 warn_total=6 pass_rate=1.00`
+  - recent10: `samples=10 warn_runs=5 warn_total=5 pass_rate=1.00`
+  - 建议：`TRIGGER soft-gate (recent10 warn_runs >= 5)`
+- 同轮执行一次 Batch 回归，确认主流程仍全绿。
+
+### Verify
+- 统计脚本：
+  - `python3 Docs/devloop/c2_warn_summary.py`
+- 回归日志：
+  - `Builds/build_devloop_cycle_c2_recent10_check.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=18 fail=0`
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=1 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：基于 recent10=5/10，先启用“soft-gate 提示升级”（保持不阻断），观察 3~5 轮后再决定是否升硬门禁。
+2. C3：继续事件结果反馈强化（可视化回显）并保持 smoke 全绿。
