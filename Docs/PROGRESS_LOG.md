@@ -2235,3 +2235,33 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：下一轮达到 recent10（当前 9），复核 soft-gate/tune-hint/gap 与 recent3 是否一致指向“继续观察”。
 2. C2：若 short-window（recent3）出现抬升且 O 桶继续主导，再触发 artillery_overclock 的小步调参试验。
+
+## 2026-03-15 08:49 EDT
+### Done
+- 继续 Stage C2（可观测探针）并补齐中短窗趋势：在 `Docs/devloop/c2_warn_summary.py` 新增 `recent5 trend` 输出。
+- 本轮达到 recent10 完整窗口（10 样本），可首次基于完整窗口做稳定判断。
+- 观测结果：
+  - `recent10 warn_runs=2/10`，仍低于 soft-gate 阈值（5）
+  - 告警桶继续集中在 `artillery_overclock`（O=2）
+  - `gap` 收敛：soft-gate gap=3，连续告警 gap=2
+
+### Verify
+- 统计脚本（回归前后）：
+  - `python3 Docs/devloop/c2_warn_summary.py`
+  - 本轮后关键输出：
+    - `recent3 trend: warns=[0, 0, 1] avg=0.33`
+    - `recent5 trend: warns=[0, 0, 0, 0, 1] avg=0.20`
+    - `recommendation: keep warn-only ... gap=3`
+    - `tune_hint_window: keep observe ... gap=2`
+    - `dominant_warn_bucket: artillery_overclock (2)`
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_recent5_trend.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=1 warnByHex=A:0,O:1,T:0 ...`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=10 recent=10 warn_runs=2 warn_total=2 warn_by_hex_recent=A:0,O:2,T:0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：再补 2~3 轮样本观察 recent3/recent5 是否继续抬升，确认是否接近连续告警阈值。
+2. C2：若 O 桶继续独占告警并 short-window 抬升，执行 `artillery_overclock` 小步调参（targetShare/bias）并做 5 次回归。

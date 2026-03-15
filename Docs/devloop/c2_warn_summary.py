@@ -82,6 +82,11 @@ recent3_warns = [w for _, w, *_ in recent3]
 recent3_avg = (sum(recent3_warns) / len(recent3_warns)) if recent3_warns else 0.0
 print(f"recent3 trend: warns={recent3_warns} avg={recent3_avg:.2f}")
 
+recent5 = recent[-5:]
+recent5_warns = [w for _, w, *_ in recent5]
+recent5_avg = (sum(recent5_warns) / len(recent5_warns)) if recent5_warns else 0.0
+print(f"recent5 trend: warns={recent5_warns} avg={recent5_avg:.2f}")
+
 # soft-gate recommendation
 recent_warn_runs = sum(1 for _, w, *_ in recent if w > 0)
 recent_warn_a = sum(a for _, _, a, _, _, _ in recent)
