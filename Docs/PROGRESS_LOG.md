@@ -2105,3 +2105,30 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续累积到 recent10，确认 O 桶是否持续偏高（避免单次波动误判）。
 2. C2：若 O 桶在 recent10 持续偏高，再小步下调/重标 `artillery_overclock` 的 `targetShare` 并进行 5 次回归验证。
+
+## 2026-03-15 06:19 EDT
+### Done
+- 继续 Stage C2（可观测探针）并完善观测结果可执行性：增强 `Docs/devloop/c2_warn_summary.py` 输出“主导告警桶”与调参提示。
+- 新增能力：
+  - 基于 recent10 统计 `A/O/T` 分桶总告警。
+  - 自动输出 `dominant_warn_bucket`。
+  - 当存在主导桶时，输出 `tuning_hint`（优先对对应组合做小步 targetShare/bias 调整）。
+- 目的：减少人工读日志成本，让下一步调参决策更直接。
+
+### Verify
+- 统计脚本：
+  - `python3 Docs/devloop/c2_warn_summary.py`
+  - 关键输出：
+    - `dominant_warn_bucket: artillery_overclock (1)`
+    - `tuning_hint: prioritize small-step retune on artillery_overclock targetShare/bias`
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_warn_bucket_hint.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 warnByHex=A:0,O:0,T:0 ...`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=5 recent=5 warn_runs=1 warn_total=1 warn_by_hex_recent=A:0,O:1,T:0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续累积 recent10（目前 5 样本），观察 O 桶是否持续主导。
+2. C2：若 O 桶在 recent10 达到稳定偏高，再执行 `artillery_overclock` 的小步 targetShare/bias 微调并跑 5 次回归确认。

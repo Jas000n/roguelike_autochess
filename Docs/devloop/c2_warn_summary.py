@@ -77,7 +77,24 @@ print(
 
 # soft-gate recommendation
 recent_warn_runs = sum(1 for _, w, *_ in recent if w > 0)
+recent_warn_a = sum(a for _, _, a, _, _, _ in recent)
+recent_warn_o = sum(o for _, _, _, o, _, _ in recent)
+recent_warn_t = sum(t for _, _, _, _, t, _ in recent)
+
 if recent_warn_runs >= 5:
     print("recommendation: TRIGGER soft-gate (recent10 warn_runs >= 5)")
 else:
     print("recommendation: keep warn-only (recent10 warn_runs < 5)")
+
+bucket_totals = {
+    "assassin_contract": recent_warn_a,
+    "artillery_overclock": recent_warn_o,
+    "tri_service": recent_warn_t,
+}
+dominant_bucket = max(bucket_totals, key=bucket_totals.get)
+dominant_value = bucket_totals[dominant_bucket]
+if dominant_value > 0:
+    print(f"dominant_warn_bucket: {dominant_bucket} ({dominant_value})")
+    print(f"tuning_hint: prioritize small-step retune on {dominant_bucket} targetShare/bias")
+else:
+    print("dominant_warn_bucket: none")
