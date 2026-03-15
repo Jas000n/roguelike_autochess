@@ -135,7 +135,12 @@ else:
     print("bucket_share_recent10: none")
 
 if dominant_value > 0:
+    dominance_ratio = (dominant_value / recent_warn_total) if recent_warn_total > 0 else 0.0
     print(f"dominant_warn_bucket: {dominant_bucket} ({dominant_value})")
-    print(f"tuning_hint: prioritize small-step retune on {dominant_bucket} targetShare/bias")
+    print(f"dominant_warn_ratio: {dominance_ratio:.2%}")
+    if recent_warn_total >= 2 and dominance_ratio >= 0.7:
+        print(f"tuning_hint: prioritize small-step retune on {dominant_bucket} targetShare/bias")
+    else:
+        print("tuning_hint: keep observe until dominant bucket has enough support")
 else:
     print("dominant_warn_bucket: none")

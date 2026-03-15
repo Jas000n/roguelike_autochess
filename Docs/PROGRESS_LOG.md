@@ -2293,3 +2293,31 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续观察 2~3 轮，确认 O 桶占比是否持续 100% 且 short-window 有无继续抬升。
 2. C2：若 O 桶持续独占且告警频次上升，执行 artillery_overclock 小步 targetShare/bias 调整并跑 5 次回归验证。
+
+## 2026-03-15 09:49 EDT
+### Done
+- 继续 Stage C2（可观测探针）并提高调参建议可靠性：更新 `Docs/devloop/c2_warn_summary.py`，新增主导桶“占比+样本支持”判定。
+- 新增逻辑：
+  - 输出 `dominant_warn_ratio`（主导桶占 recent10 总告警比例）
+  - 仅当 `recent_warn_total >= 2` 且 `dominance_ratio >= 70%` 时，给出“优先定向调参”建议
+  - 否则输出“继续观察，样本支持不足”
+- 目的：避免在样本过少时过早调参，降低噪声驱动的误操作风险。
+
+### Verify
+- 统计脚本：
+  - `python3 Docs/devloop/c2_warn_summary.py`
+  - 关键输出：
+    - `dominant_warn_bucket: artillery_overclock (2)`
+    - `dominant_warn_ratio: 100.00%`
+    - `tuning_hint: prioritize small-step retune on artillery_overclock targetShare/bias`
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_dominance_ratio.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 warnByHex=A:0,O:0,T:0 ...`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=12 recent=10 warn_runs=2 warn_total=2 warn_by_hex_recent=A:0,O:2,T:0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：保持观察 1~2 轮，确认 O 桶主导是否稳定。
+2. C2：若仍稳定主导，进入 artillery_overclock 小步调参实验（targetShare/bias），并做 5 次回归评估 warn 回落。
