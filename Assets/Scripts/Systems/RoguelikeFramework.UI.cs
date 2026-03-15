@@ -728,6 +728,7 @@ public partial class RoguelikeFramework
         string stateText = state switch
         {
             RunState.Stage => "阶段选择",
+            RunState.Event => "事件抉择",
             RunState.Prepare => "准备阶段",
             RunState.Battle => "自动战斗",
             RunState.Reward => "战斗结算",
@@ -887,6 +888,24 @@ public partial class RoguelikeFramework
                         SelectStageNode(node.id);
                     }
                 }
+            }
+        }
+
+        if (state == RunState.Event)
+        {
+            GUI.Box(new Rect(16, 220, 760, 220), $"奇遇事件（第{(pendingEventFloor > 0 ? pendingEventFloor : stageIndex + 1)}层）");
+            GUI.Label(new Rect(30, 254, 720, 50), "你遇到了一次事件选择：\n稳健收益更可控；冒险收益更高但需要承担生命代价。", wrapLabelStyle);
+
+            GUI.Box(new Rect(30, 312, 340, 98), "稳健选项\n+6 金币 或 +5 生命");
+            if (GUI.Button(new Rect(120, 374, 160, 30), "选择稳健"))
+            {
+                ResolveMysteryEventChoice(false);
+            }
+
+            GUI.Box(new Rect(406, 312, 340, 98), "冒险选项\n生命 -3，金币 +12\n（低生命时自动降级）");
+            if (GUI.Button(new Rect(496, 374, 160, 30), "选择冒险"))
+            {
+                ResolveMysteryEventChoice(true);
             }
         }
 

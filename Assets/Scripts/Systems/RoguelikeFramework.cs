@@ -5,7 +5,7 @@ using System.IO;
 
 public partial class RoguelikeFramework : MonoBehaviour
 {
-    private enum RunState { Stage, Prepare, Battle, Hex, Reward, GameOver }
+    private enum RunState { Stage, Event, Prepare, Battle, Hex, Reward, GameOver }
     private enum StageType { Normal, Elite, Shop, Mystery, Treasure, Boss }
 
     private class StageNode

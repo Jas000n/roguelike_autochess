@@ -116,6 +116,9 @@ public partial class RoguelikeFramework
                 if (currentRewardOffers.Count == 0) RollRewardOffers();
                 PickReward(0);
                 break;
+            case RunState.Event:
+                ResolveMysteryEventChoice(false);
+                break;
             case RunState.Hex:
                 if (currentHexOffers.Count == 0) RollHexOffers();
                 PickHex(0);
@@ -152,6 +155,12 @@ public partial class RoguelikeFramework
             {
                 if (currentRewardOffers.Count == 0) RollRewardOffers();
                 PickReward(0);
+                continue;
+            }
+
+            if (state == RunState.Event)
+            {
+                ResolveMysteryEventChoice(false);
                 continue;
             }
 
@@ -205,6 +214,9 @@ public partial class RoguelikeFramework
                     if (currentRewardOffers.Count == 0) RollRewardOffers();
                     PickReward(0);
                     break;
+                case RunState.Event:
+                    ResolveMysteryEventChoice(false);
+                    break;
                 case RunState.Hex:
                     if (currentHexOffers.Count == 0) RollHexOffers();
                     PickHex(0);
@@ -232,7 +244,7 @@ public partial class RoguelikeFramework
 
         while (safety-- > 0 && state != RunState.GameOver)
         {
-            if (stageIndex >= targetFloor - 1 && (state == RunState.Prepare || state == RunState.Battle || state == RunState.Reward || state == RunState.Hex))
+            if (stageIndex >= targetFloor - 1 && (state == RunState.Prepare || state == RunState.Battle || state == RunState.Reward || state == RunState.Event || state == RunState.Hex))
             {
                 battleLog = $"[DEV] 已推进至 Boss 层流程：floor={stageIndex + 1}, state={state}";
                 return;
@@ -267,6 +279,9 @@ public partial class RoguelikeFramework
                 case RunState.Reward:
                     if (currentRewardOffers.Count == 0) RollRewardOffers();
                     PickReward(0);
+                    break;
+                case RunState.Event:
+                    ResolveMysteryEventChoice(false);
                     break;
                 case RunState.Hex:
                     if (currentHexOffers.Count == 0) RollHexOffers();
@@ -377,6 +392,9 @@ public partial class RoguelikeFramework
                 case RunState.Reward:
                     if (currentRewardOffers.Count == 0) RollRewardOffers();
                     PickReward(0);
+                    break;
+                case RunState.Event:
+                    ResolveMysteryEventChoice(false);
                     break;
                 case RunState.Hex:
                     if (currentHexOffers.Count == 0) RollHexOffers();
@@ -1104,6 +1122,9 @@ public partial class RoguelikeFramework
                     case RunState.Reward:
                         if (currentRewardOffers.Count == 0) RollRewardOffers();
                         PickReward(DevPickRewardIndex(plan));
+                        break;
+                    case RunState.Event:
+                        ResolveMysteryEventChoice(false);
                         break;
                     case RunState.Hex:
                         if (currentHexOffers.Count == 0) RollHexOffers();

@@ -519,8 +519,29 @@ public partial class RoguelikeFramework
         bool trigger = force || UnityEngine.Random.value < 0.35f;
         if (!trigger) return false;
 
+        if (!force && riskyChoice == null)
+        {
+            pendingEventNodeId = node.id;
+            pendingEventFloor = node.floor;
+            state = RunState.Event;
+            battleLog = $"奇遇事件：第{node.floor}层，请选择【稳健】或【冒险】";
+            return true;
+        }
+
+        ResolveMysteryEventChoice(riskyChoice ?? (playerLife >= 16 && gold <= 20));
+        return true;
+    }
+
+    private void ResolveMysteryEventChoice(bool chooseRisky)
+    {
+        var node = GetCurrentStageNode();
+        if (node == null && !string.IsNullOrEmpty(pendingEventNodeId))
+        {
+            stageNodeById.TryGetValue(pendingEventNodeId, out node);
+        }
+        if (node == null) return;
+
         devEventRoomResolveCount++;
-        bool chooseRisky = riskyChoice ?? (playerLife >= 16 && gold <= 20);
 
         if (chooseRisky)
         {
@@ -552,8 +573,9 @@ public partial class RoguelikeFramework
         }
 
         Debug.Log($"[DEV][EVENT_ROOM] floor={node.floor} resolveCount={devEventRoomResolveCount} risky={chooseRisky} log={battleLog}");
+        pendingEventNodeId = "";
+        pendingEventFloor = 0;
         AdvanceToStageMapFromCurrentNode();
-        return true;
     }
 
     private void AdvanceToStageMapFromCurrentNode()

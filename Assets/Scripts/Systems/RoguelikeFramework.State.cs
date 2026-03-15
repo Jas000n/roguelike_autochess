@@ -76,6 +76,8 @@ public partial class RoguelikeFramework
     private int spikeProbeTriServiceHits;
     private int spikeScenarioWarnLast;
     private int devEventRoomResolveCount;
+    private string pendingEventNodeId = "";
+    private int pendingEventFloor;
     private readonly HashSet<string> compMilestoneRewarded = new();
 
     private int draggingDeploy = -1;
