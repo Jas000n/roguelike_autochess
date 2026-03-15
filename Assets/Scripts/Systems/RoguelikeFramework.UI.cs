@@ -477,6 +477,15 @@ public partial class RoguelikeFramework
         return score;
     }
 
+    private string FormatEventForReview(string evt)
+    {
+        if (string.IsNullOrEmpty(evt)) return "";
+        if (evt.Contains("事件") || evt.Contains("奇遇")) return $"[事件] {evt}";
+        if (evt.Contains("结算") || evt.Contains("命中") || evt.Contains("战斗") || evt.Contains("升星")) return $"[战斗] {evt}";
+        if (evt.Contains("金币") || evt.Contains("经济") || evt.Contains("奖励")) return $"[经济] {evt}";
+        return $"[其他] {evt}";
+    }
+
     private void DrawHudInfoStrip(Rect rect, string text, TextAnchor align = TextAnchor.MiddleLeft)
     {
         Color old = GUI.color;
@@ -736,7 +745,8 @@ public partial class RoguelikeFramework
                 int maxRows = Mathf.FloorToInt((panelH - 38f) / 18f);
                 for (int i = 0; i < recentEvents.Count && i < maxRows; i++)
                 {
-                    GUI.Label(new Rect(26, 246 + topPad + i * 18, leftW - 20f, 18), recentEvents[recentEvents.Count - 1 - i]);
+                    string evt = recentEvents[recentEvents.Count - 1 - i];
+                    GUI.Label(new Rect(26, 246 + topPad + i * 18, leftW - 20f, 18), FormatEventForReview(evt));
                 }
             }
         }

@@ -215,7 +215,7 @@ public partial class RoguelikeFramework : MonoBehaviour
     {
         if (string.IsNullOrEmpty(evt)) return;
         recentEvents.Add(evt);
-        while (recentEvents.Count > 6) recentEvents.RemoveAt(0);
+        while (recentEvents.Count > 12) recentEvents.RemoveAt(0);
     }
 
     private void HandlePrepareQuickActions()

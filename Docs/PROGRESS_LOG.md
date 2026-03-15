@@ -1848,3 +1848,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续 recent10 滚动观察，保持 warn-only 策略直到触发线再次升高。
 2. C3：可考虑给“回看事件”面板加分类标签（事件/战斗/经济）提升检索效率。
+
+## 2026-03-15 01:20 EDT
+### Done
+- 完成上一轮 C3 Next-2：为“回看事件”面板增加轻量分类标签，提升检索效率。
+- 改动：
+  - 新增 `FormatEventForReview(evt)` 分类格式化：
+    - `[事件]`：奇遇/事件相关
+    - `[战斗]`：命中/结算/升星等战斗链路
+    - `[经济]`：金币/奖励/经济词条
+    - `[其他]`：默认兜底
+  - 事件回看面板改为展示格式化文本。
+- 同步优化：`PushEvent` 保留容量由 6 提升到 12，避免回看面板内容过短。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c3_event_review_tags.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=18 fail=0`
+  - `[DEV][SPIKE_SCENARIO] pass=20 fail=0 warn=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续 recent10 滚动观察，保持 warn-only，除非再次稳定抬升到触发线。
+2. C3：可进一步给回看面板加“仅事件/仅战斗/仅经济”过滤开关（若 UI 空间允许）。
