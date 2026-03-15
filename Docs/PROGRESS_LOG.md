@@ -2079,3 +2079,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续累积到 recent10，重点观察 `warn_by_hex_recent` 是否出现单桶偏高。
 2. C2：若后续某桶持续偏高，先小步调整该桶对应 `targetShare`，再跑 5 次回归验证回落。
+
+## 2026-03-15 05:50 EDT
+### Done
+- 继续 Stage C2 观测链路：升级 `Docs/devloop/c2_warn_summary.py`，与当前滚动采样格式对齐。
+- 脚本增强：
+  - 优先读取 `Docs/devloop/spike_warn_history.csv`（滚动采样真源）。
+  - 兼容旧格式（`ts,warn`）与新格式（`ts,warn_total,warn_assassin,warn_artillery,warn_tri_service`）。
+  - 输出 all/recent10 的 `warn_runs / warn_total / warn_by_hex(A/O/T)` 与 pass_rate。
+  - 无 CSV 时仍可回退解析历史 `build_devloop_cycle_c2_warn_sample_*.log`。
+- 本轮采样出现一次轻微告警，定位到炮火桶（O），可用于后续定向微调决策。
+
+### Verify
+- 统计脚本：
+  - `python3 Docs/devloop/c2_warn_summary.py`
+  - 输出（本轮后）：`recent10 ... warn_by_hex=A:0,O:1,T:0`
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_warn_summary_refresh.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=19 fail=0 warn=1 warnByHex=A:0,O:1,T:0 ...`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=4 recent=4 warn_runs=1 warn_total=1 warn_by_hex_recent=A:0,O:1,T:0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续累积到 recent10，确认 O 桶是否持续偏高（避免单次波动误判）。
+2. C2：若 O 桶在 recent10 持续偏高，再小步下调/重标 `artillery_overclock` 的 `targetShare` 并进行 5 次回归验证。
