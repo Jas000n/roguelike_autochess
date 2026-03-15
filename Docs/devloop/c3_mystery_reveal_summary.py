@@ -71,5 +71,10 @@ else:
 # Confidence hints (sample adequacy)
 early_n = sum(early.values())
 late_n = sum(late.values())
-print(f"confidence early_samples: {early_n} ({'OK' if early_n >= 5 else 'LOW'})")
-print(f"confidence late_samples: {late_n} ({'OK' if late_n >= 5 else 'LOW'})")
+early_ok_conf = early_n >= 5
+late_ok_conf = late_n >= 5
+print(f"confidence early_samples: {early_n} ({'OK' if early_ok_conf else 'LOW'})")
+print(f"confidence late_samples: {late_n} ({'OK' if late_ok_conf else 'LOW'})")
+
+status = "STABLE" if early_ok_conf and late_ok_conf else "NEEDS_MORE_SAMPLES"
+print(f"c3_mystery_status: {status}")
