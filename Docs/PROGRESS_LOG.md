@@ -2471,3 +2471,31 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：基于 `MYSTERY_REVEAL` 日志再滚动几轮，确认前/后期权重是否被实际触发到对应类型。
 2. C3：在 Shop/Boss 前再做一项低风险差异化（优先提示与轻量机制），保持回归全绿。
+
+## 2026-03-15 13:30 EDT
+### Done
+- 继续 Stage C3 可观测性建设：新增 `Docs/devloop/c3_mystery_reveal_summary.py`，用于汇总 `MYSTERY_REVEAL` 日志并按 early/mid/late 分桶统计类型分布。
+- 脚本能力：
+  - 读取 `Builds/build_devloop_cycle_c3_*.log`（若无则回退 `build_devloop_cycle_*.log`）
+  - 解析 `floor/type/weights` 观测行
+  - 输出 overall + 分桶占比（early<=4, mid 5~8, late>=9）
+- 同轮补跑 3 次 C3 batch 采样，验证日志链路可用。
+
+### Verify
+- 新增脚本执行：
+  - `python3 Docs/devloop/c3_mystery_reveal_summary.py`
+  - 输出：`samples=4 files=4`，`overall: Normal:3, Shop:1`，`mid: Normal 75% / Shop 25%`
+- 回归日志：
+  - `Builds/build_devloop_cycle_c3_reveal_sample_r1.log`
+  - `Builds/build_devloop_cycle_c3_reveal_sample_r2.log`
+  - `Builds/build_devloop_cycle_c3_reveal_sample_r3.log`
+- 关键日志：
+  - 三轮均出现 `[DEV][MYSTERY_REVEAL] ...`
+  - 三轮均 `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - 三轮均 `[DEV][BATCH] PASSED failCount=0`
+- C2 稳定性复核：
+  - `python3 Docs/devloop/c2_warn_summary.py` → `recent10 warn_runs=0/10` 持续稳定。
+
+### Next
+1. C3：补一条可触发 early/late 桶的定向 dev 采样入口（当前回归样本主要落在 mid）。
+2. C3：基于分桶样本再校验前中后期揭示分布是否与设计偏置一致。
