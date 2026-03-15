@@ -2706,3 +2706,27 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：继续保持事件流信息完善，下一轮可补“Treasure 节点收益预告”提示。
 2. 持续全链路回归，确保 C2/C3 稳定性不回退。
+
+## 2026-03-15 18:31 EDT
+### Done
+- 继续 Stage C3（低风险信息差异化）：为 Treasure（宝箱）节点补充“收益预告”事件提示。
+- 代码改动（`RoguelikeFramework.Data.cs` / `SelectStageNode`）：
+  - 在进入宝箱节点并切到 Reward 前，新增事件：
+    - `宝箱节点情报：第X层，当前金币Y，可优先补经济/成型奖励`
+- 目的：在奖励选择前提供简洁上下文，帮助玩家更快决定偏经济还是偏战力的选项。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_treasure_hint.log`
+- 关键日志：
+  - `[DEV][SPIKE_WARN_WINDOW] samples=44 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][MYSTERY_BUCKET_SMOKE] pass=4 fail=0 ...`
+  - `[DEV][BATCH] PASSED failCount=0`
+- 统计脚本复核：
+  - `python3 Docs/devloop/c2_warn_summary.py` → recent10 继续 `0/10`
+  - `python3 Docs/devloop/c3_mystery_reveal_summary.py` → direction_check 继续 PASS。
+
+### Next
+1. C3：保持 low-risk 节奏，下一轮可补“节点情报”在回看面板中的分类可见性（若需要）。
+2. 持续回归全链路，确保 C2/C3 稳定性不回退。

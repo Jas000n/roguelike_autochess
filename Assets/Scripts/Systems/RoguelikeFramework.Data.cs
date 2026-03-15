@@ -525,6 +525,7 @@ public partial class RoguelikeFramework
             RollRewardOffers();
             state = RunState.Reward;
             battleLog = $"进入宝箱节点：第{node.floor}层";
+            PushEvent($"宝箱节点情报：第{node.floor}层，当前金币{gold}，可优先补经济/成型奖励");
             return;
         }
 
