@@ -893,16 +893,24 @@ public partial class RoguelikeFramework
 
         if (state == RunState.Event)
         {
-            GUI.Box(new Rect(16, 220, 760, 220), $"奇遇事件（第{(pendingEventFloor > 0 ? pendingEventFloor : stageIndex + 1)}层）");
+            int floor = pendingEventFloor > 0 ? pendingEventFloor : stageIndex + 1;
+            int safeGoldMin = gold;
+            int safeGoldMax = gold + 6;
+            int safeLifeMin = playerLife;
+            int safeLifeMax = Mathf.Min(36, playerLife + 5);
+            int riskyGoldAfter = gold + (playerLife > 6 ? 12 : 4);
+            int riskyLifeAfter = playerLife > 6 ? Mathf.Max(1, playerLife - 3) : playerLife;
+
+            GUI.Box(new Rect(16, 220, 760, 220), $"奇遇事件（第{floor}层）");
             GUI.Label(new Rect(30, 254, 720, 50), "你遇到了一次事件选择：\n稳健收益更可控；冒险收益更高但需要承担生命代价。", wrapLabelStyle);
 
-            GUI.Box(new Rect(30, 312, 340, 98), "稳健选项\n+6 金币 或 +5 生命");
+            GUI.Box(new Rect(30, 312, 340, 98), $"稳健选项\n金币 {safeGoldMin}~{safeGoldMax} / 生命 {safeLifeMin}~{safeLifeMax}");
             if (GUI.Button(new Rect(120, 374, 160, 30), "选择稳健"))
             {
                 ResolveMysteryEventChoice(false);
             }
 
-            GUI.Box(new Rect(406, 312, 340, 98), "冒险选项\n生命 -3，金币 +12\n（低生命时自动降级）");
+            GUI.Box(new Rect(406, 312, 340, 98), $"冒险选项\n金币 {gold}->{riskyGoldAfter} / 生命 {playerLife}->{riskyLifeAfter}");
             if (GUI.Button(new Rect(496, 374, 160, 30), "选择冒险"))
             {
                 ResolveMysteryEventChoice(true);

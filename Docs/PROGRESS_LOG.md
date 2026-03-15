@@ -1628,3 +1628,32 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续保持 warn-only 周期观察，若 warn 比例持续抬升再启 soft-gate。
 2. C3：在事件状态加入“描述+预览收益/代价”的更清晰反馈（可读性）并补 UI smoke 断言。
+
+## 2026-03-14 20:51 EDT
+### Done
+- 完成上一轮 C3 Next：事件状态补充“收益/代价预览”并把事件状态纳入 UI smoke。
+- 可读性改进：
+  - 事件面板展示当前层数 + 两选项的预期资源区间/变化：
+    - 稳健：`金币 min~max / 生命 min~max`
+    - 冒险：`金币 a->b / 生命 x->y`
+- 流程改进：
+  - 抽出 `EnterMysteryEventChoiceState(node)`，统一进入 Event 状态逻辑
+  - UI smoke 新增断言：
+    - 可进入 `RunState.Event`
+    - 选择后可返回 `RunState.Stage`
+- 自动流程兼容：Dev regression/skip/balance 流程补齐 Event 分支处理，确保不会因新状态卡住。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c3_event_ui_feedback.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][EVENT_ROOM] floor=3 resolveCount=1 risky=False ...`
+  - `[DEV][UI_SMOKE] pass=18 fail=0`（较此前 +2，包含事件状态链路）
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续周期采样 warn-only，若 warn 比例抬升再启 soft-gate。
+2. C3：为事件房增加“轻量上下文文案（当前金币/生命压力建议）”并评估是否需要事件结果动画/提示强化。

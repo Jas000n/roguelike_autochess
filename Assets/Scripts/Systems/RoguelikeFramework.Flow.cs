@@ -443,6 +443,18 @@ public partial class RoguelikeFramework
         RestartRun();
         Check("重开后状态=Stage", state == RunState.Stage, $"state={state}");
 
+        if (stageNodeById.TryGetValue("f3_1", out var eventNode))
+        {
+            RestartRun();
+            currentStageNodeId = eventNode.id;
+            stageIndex = eventNode.floor - 1;
+            EnterMysteryEventChoiceState(eventNode);
+            Check("可进入事件选择状态", state == RunState.Event, $"state={state}");
+            ResolveMysteryEventChoice(false);
+            Check("事件选择后可回到地图", state == RunState.Stage || state == RunState.GameOver, $"state={state}");
+            RestartRun();
+        }
+
         DevQuickStartToPrepare();
         Check("快速开局可进入准备", state == RunState.Prepare, $"state={state}");
 

@@ -521,15 +521,21 @@ public partial class RoguelikeFramework
 
         if (!force && riskyChoice == null)
         {
-            pendingEventNodeId = node.id;
-            pendingEventFloor = node.floor;
-            state = RunState.Event;
-            battleLog = $"奇遇事件：第{node.floor}层，请选择【稳健】或【冒险】";
+            EnterMysteryEventChoiceState(node);
             return true;
         }
 
         ResolveMysteryEventChoice(riskyChoice ?? (playerLife >= 16 && gold <= 20));
         return true;
+    }
+
+    private void EnterMysteryEventChoiceState(StageNode node)
+    {
+        if (node == null) return;
+        pendingEventNodeId = node.id;
+        pendingEventFloor = node.floor;
+        state = RunState.Event;
+        battleLog = $"奇遇事件：第{node.floor}层，请选择【稳健】或【冒险】";
     }
 
     private void ResolveMysteryEventChoice(bool chooseRisky)
