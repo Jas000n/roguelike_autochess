@@ -477,11 +477,33 @@ public partial class RoguelikeFramework
     {
         if (node == null || node.type != StageType.Mystery || node.mysteryRevealed) return;
 
+        // C3 差异化：神秘节点的揭示结果随层数变化，前期更偏运营补给，后期更偏战力挑战/高价值回报。
+        float pNormal = 0.42f;
+        float pElite = 0.16f;
+        float pShop = 0.21f;
+        float pTreasure = 0.21f;
+
+        if (node.floor <= 4)
+        {
+            pNormal = 0.48f;
+            pElite = 0.12f;
+            pShop = 0.28f;
+            pTreasure = 0.12f;
+        }
+        else if (node.floor >= 9)
+        {
+            pNormal = 0.28f;
+            pElite = 0.28f;
+            pShop = 0.12f;
+            pTreasure = 0.32f;
+        }
+
         float roll = UnityEngine.Random.value;
-        if (roll < 0.42f) node.revealedType = StageType.Normal;
-        else if (roll < 0.58f) node.revealedType = StageType.Elite;
-        else if (roll < 0.79f) node.revealedType = StageType.Shop;
+        if (roll < pNormal) node.revealedType = StageType.Normal;
+        else if (roll < pNormal + pElite) node.revealedType = StageType.Elite;
+        else if (roll < pNormal + pElite + pShop) node.revealedType = StageType.Shop;
         else node.revealedType = StageType.Treasure;
+
         node.mysteryRevealed = true;
     }
 

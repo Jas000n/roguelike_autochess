@@ -2422,3 +2422,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：开始事件房/商店房/Boss 机制差异化的下一轮小步实现（优先低风险、可回归项）。
 2. 保持每轮 batch 全链路回归，确保 C2 收敛不被后续改动破坏。
+
+## 2026-03-15 12:31 EDT
+### Done
+- 进入 Stage C3 的首个低风险机制差异化：神秘节点揭示权重改为“随层数变化”。
+- 具体改动（`RoguelikeFramework.Data.cs` / `RevealMysteryNode`）：
+  - 前期（floor<=4）：偏运营补给（Shop/Normal 概率更高）
+    - Normal 0.48 / Elite 0.12 / Shop 0.28 / Treasure 0.12
+  - 中期（默认）：维持原始近似分布
+    - Normal 0.42 / Elite 0.16 / Shop 0.21 / Treasure 0.21
+  - 后期（floor>=9）：偏挑战与高价值回报（Elite/Treasure 概率更高）
+    - Normal 0.28 / Elite 0.28 / Shop 0.12 / Treasure 0.32
+- 目的：强化 C3 的“事件房/商店房/Boss 前后节奏差异化”，在不破坏现有流程的前提下提升路线决策质感。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_mystery_floor_bias.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 warnByHex=A:0,O:0,T:0 ...`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=30 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+- C2 监控侧继续稳定：`recent10 warn_runs=0/10`。
+
+### Next
+1. C3：在当前楼层权重基础上，补一条可观测日志（mystery reveal type）用于后续节奏验证与调参。
+2. C3：继续小步差异化（优先 Shop 节点与 Boss 前节点体验提示/机制微调），并保持 batch 全绿。
