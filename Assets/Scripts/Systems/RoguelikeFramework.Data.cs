@@ -579,6 +579,7 @@ public partial class RoguelikeFramework
         }
 
         Debug.Log($"[DEV][EVENT_ROOM] floor={node.floor} resolveCount={devEventRoomResolveCount} risky={chooseRisky} log={battleLog}");
+        PushEvent($"事件结果：{battleLog}");
         pendingEventNodeId = "";
         pendingEventFloor = 0;
         AdvanceToStageMapFromCurrentNode();

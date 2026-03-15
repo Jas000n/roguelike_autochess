@@ -1680,3 +1680,24 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续周期采样 warn-only，若 warn 比例抬升再启 soft-gate。
 2. C3：评估是否加入事件结果短提示（toast）/动画强化，提升反馈闭环。
+
+## 2026-03-14 21:50 EDT
+### Done
+- 完成上一轮 C3 Next-2 的第一步：加入事件结果短提示（toast）链路。
+- 在 `ResolveMysteryEventChoice()` 结算后新增：
+  - `PushEvent($"事件结果：{battleLog}")`
+- 作用：事件选择后的结果将进入统一事件流（recent events），反馈更明显，不只依赖单帧 battleLog。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c3_event_toast.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=18 fail=0`
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续周期采样 warn-only，若 warn 比例抬升再启 soft-gate。
+2. C3：若要进一步强化反馈，可补轻量事件结果动效（例如短暂颜色闪烁/强调条），保持不影响主流程操作。
