@@ -1651,7 +1651,15 @@ public partial class RoguelikeFramework
             battleLog = prepMsg;
 
         if (effectiveType == StageType.Shop)
+        {
             PushEvent($"节点情报：第{st.floor}层为商店节点（额外金币与免费刷新）");
+            if (currentShopHexOffers.Count > 0)
+            {
+                string firstHexName = currentShopHexOffers[0].name;
+                int firstHexCost = currentShopHexCosts.Count > 0 ? currentShopHexCosts[0] : 0;
+                PushEvent($"商店情报：本层可购强化{currentShopHexOffers.Count}个，首项[{firstHexName}] 价格{firstHexCost}金币");
+            }
+        }
         else if (effectiveType == StageType.Elite)
             PushEvent($"节点情报：第{st.floor}层为精英节点（建议补前排与控制）");
         else if (effectiveType == StageType.Boss)

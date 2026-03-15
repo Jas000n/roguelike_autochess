@@ -2631,3 +2631,28 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：继续采样并观察 direction_check 是否长期保持 PASS，若出现 WARN 再微调权重。
 2. C3：补一项 Shop/Boss 前轻机制差异化（保持低风险 + 全链路回归）。
+
+## 2026-03-15 16:30 EDT
+### Done
+- 继续 Stage C3（低风险差异化）：为商店节点新增“可购强化情报”事件流提示，提升节点决策透明度。
+- 代码改动（`RoguelikeFramework.Flow.cs` / `StartPreparationForCurrentStage`）：
+  - 在 Shop 节点已有提示基础上，新增一条事件：
+    - `商店情报：本层可购强化X个，首项[名称] 价格Y金币`
+  - 仅做信息展示，不改数值与流程。
+- 目的：让玩家在进入 Shop 节点时，快速知道本层是否值得预留金币购买强化。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_shopintel_event.log`
+- 关键日志：
+  - `[DEV][SPIKE_WARN_WINDOW] samples=41 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][MYSTERY_BUCKET_SMOKE] pass=4 fail=0 ...`
+  - `[DEV][BATCH] PASSED failCount=0`
+- 统计脚本：
+  - `python3 Docs/devloop/c2_warn_summary.py` → recent10 继续 `0/10`
+  - `python3 Docs/devloop/c3_mystery_reveal_summary.py` → direction_check 继续 PASS。
+
+### Next
+1. C3：继续累积 mystery 样本并跟踪 direction_check 稳定性（保持 PASS）。
+2. C3：下一轮可在 Boss 前补一个同级别“信息型提示”强化，保持低风险与全链路回归。
