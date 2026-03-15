@@ -371,10 +371,13 @@ public partial class RoguelikeFramework
             string path = Path.Combine(dir, "spike_warn_history.csv");
 
             string ts = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
-            string line = $"{ts},{spikeScenarioWarnLast}";
+            string line = $"{ts},{spikeScenarioWarnLast},{spikeScenarioWarnAssassinLast},{spikeScenarioWarnArtilleryLast},{spikeScenarioWarnTriServiceLast}";
             File.AppendAllText(path, line + Environment.NewLine);
 
             var warns = new List<int>();
+            var warnsA = new List<int>();
+            var warnsO = new List<int>();
+            var warnsT = new List<int>();
             string[] lines = File.ReadAllLines(path);
             for (int i = 0; i < lines.Length; i++)
             {
@@ -382,7 +385,21 @@ public partial class RoguelikeFramework
                 if (string.IsNullOrWhiteSpace(raw)) continue;
                 string[] parts = raw.Split(',');
                 if (parts.Length < 2) continue;
-                if (int.TryParse(parts[1], out int w)) warns.Add(Mathf.Max(0, w));
+
+                int w = 0;
+                if (int.TryParse(parts[1], out int parsedW)) w = Mathf.Max(0, parsedW);
+                warns.Add(w);
+
+                int wa = 0, wo = 0, wt = 0;
+                if (parts.Length >= 5)
+                {
+                    if (int.TryParse(parts[2], out int parsedA)) wa = Mathf.Max(0, parsedA);
+                    if (int.TryParse(parts[3], out int parsedO)) wo = Mathf.Max(0, parsedO);
+                    if (int.TryParse(parts[4], out int parsedT)) wt = Mathf.Max(0, parsedT);
+                }
+                warnsA.Add(wa);
+                warnsO.Add(wo);
+                warnsT.Add(wt);
             }
 
             int count = warns.Count;
@@ -390,10 +407,16 @@ public partial class RoguelikeFramework
             int recentCount = count - from;
             int recentWarnRuns = 0;
             int recentWarnTotal = 0;
+            int recentWarnA = 0;
+            int recentWarnO = 0;
+            int recentWarnT = 0;
             int consecutiveWarnRuns = 0;
             for (int i = from; i < count; i++)
             {
                 int w = warns[i];
+                recentWarnA += warnsA[i];
+                recentWarnO += warnsO[i];
+                recentWarnT += warnsT[i];
                 if (w > 0)
                 {
                     recentWarnRuns++;
@@ -408,7 +431,7 @@ public partial class RoguelikeFramework
 
             bool softGate = recentWarnRuns >= 5;
             bool tuneHint = consecutiveWarnRuns >= 3;
-            Debug.Log($"[DEV][SPIKE_WARN_WINDOW] samples={count} recent={recentCount} warn_runs={recentWarnRuns} warn_total={recentWarnTotal} soft_gate={(softGate ? 1 : 0)} tune_hint={(tuneHint ? 1 : 0)}");
+            Debug.Log($"[DEV][SPIKE_WARN_WINDOW] samples={count} recent={recentCount} warn_runs={recentWarnRuns} warn_total={recentWarnTotal} warn_by_hex_recent=A:{recentWarnA},O:{recentWarnO},T:{recentWarnT} soft_gate={(softGate ? 1 : 0)} tune_hint={(tuneHint ? 1 : 0)}");
             if (softGate)
             {
                 Debug.LogWarning("[DEV][SPIKE_WARN_SOFT_GATE] recent10 warn_runs >= 5, recommend CI yellow");
@@ -1062,6 +1085,9 @@ public partial class RoguelikeFramework
         Check("三军协同探针命中", spikeProbeTriServiceHits > 0, $"hits={spikeProbeTriServiceHits}");
 
         spikeScenarioWarnLast = warn;
+        spikeScenarioWarnAssassinLast = warnAssassin;
+        spikeScenarioWarnArtilleryLast = warnArtillery;
+        spikeScenarioWarnTriServiceLast = warnTriService;
         Debug.Log($"[DEV][SPIKE_SCENARIO] pass={pass} fail={fail} warn={warn} warnByHex=A:{warnAssassin},O:{warnArtillery},T:{warnTriService} probeHits=A:{spikeProbeAssassinContractHits},O:{spikeProbeArtilleryOverclockHits},T:{spikeProbeTriServiceHits}");
     }
 

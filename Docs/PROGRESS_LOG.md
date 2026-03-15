@@ -2049,3 +2049,33 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续累积 `spike_warn_history.csv`（目标 recent10），观察 `warnByHex` 是否出现偏态；若偏态持续再做定向小调。
 2. C2：若后续出现 `warn>0`，优先记录对应 hex 桶变化，再决定是调 `targetShare` 还是组合偏置参数。
+
+## 2026-03-15 05:20 EDT
+### Done
+- 继续 Stage C2 可观测探针：把 `SPIKE_WARN_WINDOW` 从“仅总量”升级为“recent10 按海克斯累计分布”。
+- 代码改动：
+  - `RoguelikeFramework.State.cs` 新增本轮分桶缓存：
+    - `spikeScenarioWarnAssassinLast`
+    - `spikeScenarioWarnArtilleryLast`
+    - `spikeScenarioWarnTriServiceLast`
+  - `RoguelikeFramework.Flow.cs`：
+    - 在 `DevRunSpikeProbeScenarios()` 结束时写入上述分桶缓存。
+    - `DevRecordSpikeWarnSample()` 追加写入 CSV 扩展列：
+      - `timestamp,warn_total,warn_assassin,warn_artillery,warn_tri_service`
+    - 兼容历史两列旧样本读取（旧行自动按 0 处理分桶）。
+    - 窗口日志升级为：
+      - `warn_by_hex_recent=A:x,O:y,T:z`
+- 目的：在 soft-gate 仍为 warn-only 的阶段，先把 recent10 的告警来源结构看清，避免盲调。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_warn_hex_window.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 warnByHex=A:0,O:0,T:0 probeHits=A:1,O:1,T:1`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=3 recent=3 warn_runs=0 warn_total=0 warn_by_hex_recent=A:0,O:0,T:0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续累积到 recent10，重点观察 `warn_by_hex_recent` 是否出现单桶偏高。
+2. C2：若后续某桶持续偏高，先小步调整该桶对应 `targetShare`，再跑 5 次回归验证回落。

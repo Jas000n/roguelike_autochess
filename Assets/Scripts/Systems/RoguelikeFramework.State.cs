@@ -77,6 +77,9 @@ public partial class RoguelikeFramework
     private int spikeProbeArtilleryOverclockHits;
     private int spikeProbeTriServiceHits;
     private int spikeScenarioWarnLast;
+    private int spikeScenarioWarnAssassinLast;
+    private int spikeScenarioWarnArtilleryLast;
+    private int spikeScenarioWarnTriServiceLast;
     private int devEventRoomResolveCount;
     private string pendingEventNodeId = "";
     private int pendingEventFloor;
