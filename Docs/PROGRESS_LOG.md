@@ -1657,3 +1657,26 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续周期采样 warn-only，若 warn 比例抬升再启 soft-gate。
 2. C3：为事件房增加“轻量上下文文案（当前金币/生命压力建议）”并评估是否需要事件结果动画/提示强化。
+
+## 2026-03-14 21:20 EDT
+### Done
+- 完成上一轮 C3 Next-1：在事件选择面板增加轻量上下文建议文案（基于当前生命/金币压力）。
+- 规则：
+  - 生命 <= 10：建议稳健
+  - 金币 <= 14 且生命不低：建议冒险补经济
+  - 其余：给出中性建议（按下回合强度决策）
+- 目标：降低新玩家在事件房的决策摩擦，不改变现有收益/代价数值。
+
+### Verify
+- Batch 回归：
+  - `Unity -batchmode -nographics -quit -projectPath DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile Builds/build_devloop_cycle_c3_event_suggestion.log`
+- 关键日志：
+  - `[DEV][CONFIG_VALIDATE] pass=1 fail=0 | shopOdds=scriptable-object`
+  - `[DEV][UI_SMOKE] pass=18 fail=0`
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续周期采样 warn-only，若 warn 比例抬升再启 soft-gate。
+2. C3：评估是否加入事件结果短提示（toast）/动画强化，提升反馈闭环。

@@ -900,9 +900,13 @@ public partial class RoguelikeFramework
             int safeLifeMax = Mathf.Min(36, playerLife + 5);
             int riskyGoldAfter = gold + (playerLife > 6 ? 12 : 4);
             int riskyLifeAfter = playerLife > 6 ? Mathf.Max(1, playerLife - 3) : playerLife;
+            string suggest = playerLife <= 10
+                ? "建议：当前生命偏低，优先稳健路线。"
+                : (gold <= 14 ? "建议：当前经济偏紧，可考虑冒险补经济。" : "建议：根据下回合强度选择，稳健保血/冒险抢经济。");
 
             GUI.Box(new Rect(16, 220, 760, 220), $"奇遇事件（第{floor}层）");
             GUI.Label(new Rect(30, 254, 720, 50), "你遇到了一次事件选择：\n稳健收益更可控；冒险收益更高但需要承担生命代价。", wrapLabelStyle);
+            GUI.Label(new Rect(30, 296, 720, 20), suggest);
 
             GUI.Box(new Rect(30, 312, 340, 98), $"稳健选项\n金币 {safeGoldMin}~{safeGoldMax} / 生命 {safeLifeMin}~{safeLifeMax}");
             if (GUI.Button(new Rect(120, 374, 160, 30), "选择稳健"))
