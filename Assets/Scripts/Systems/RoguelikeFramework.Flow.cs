@@ -929,6 +929,9 @@ public partial class RoguelikeFramework
         int pass = 0;
         int fail = 0;
         int warn = 0;
+        int warnAssassin = 0;
+        int warnArtillery = 0;
+        int warnTriService = 0;
 
         void Check(string name, bool ok, string detail)
         {
@@ -1021,6 +1024,12 @@ public partial class RoguelikeFramework
                 if (totalDmg > 0 && share < targetShare)
                 {
                     warn++;
+                    switch (hexId)
+                    {
+                        case "assassin_contract": warnAssassin++; break;
+                        case "artillery_overclock": warnArtillery++; break;
+                        case "tri_service": warnTriService++; break;
+                    }
                     Debug.LogWarning($"[DEV][SPIKE_WARN] {name} dmg share below target: {share:F2} < {targetShare:F2}");
                 }
                 if (totalDmg > 0)
@@ -1053,7 +1062,7 @@ public partial class RoguelikeFramework
         Check("三军协同探针命中", spikeProbeTriServiceHits > 0, $"hits={spikeProbeTriServiceHits}");
 
         spikeScenarioWarnLast = warn;
-        Debug.Log($"[DEV][SPIKE_SCENARIO] pass={pass} fail={fail} warn={warn} probeHits=A:{spikeProbeAssassinContractHits},O:{spikeProbeArtilleryOverclockHits},T:{spikeProbeTriServiceHits}");
+        Debug.Log($"[DEV][SPIKE_SCENARIO] pass={pass} fail={fail} warn={warn} warnByHex=A:{warnAssassin},O:{warnArtillery},T:{warnTriService} probeHits=A:{spikeProbeAssassinContractHits},O:{spikeProbeArtilleryOverclockHits},T:{spikeProbeTriServiceHits}");
     }
 
     private void DevRunEventRoomPrototypeSmokeTest()

@@ -2023,3 +2023,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续积累 `spike_warn_history.csv` 到 recent10 窗口，再据 `warn_runs` 判定是否进入 soft-gate。
 2. C3：若继续打磨事件回看，可做统一 tooltip 样式收敛（视觉一致性）。
+
+## 2026-03-15 04:50 EDT
+### Done
+- 继续 Stage C2 可观测探针：细化 `SPIKE_WARN` 到“按海克斯场景分桶”统计，定位哪条组合更容易触发低占比告警。
+- 代码改动（`RoguelikeFramework.Flow.cs`）：
+  - 在 `DevRunSpikeProbeScenarios()` 新增三类告警计数：
+    - `warnAssassin`（刺客契约）
+    - `warnArtillery`（炮火超频）
+    - `warnTriService`（三军协同）
+  - 每次触发 `SPIKE_WARN` 时按 `hexId` 计入对应分桶。
+  - 汇总日志升级为：
+    - `[DEV][SPIKE_SCENARIO] ... warnByHex=A:x,O:y,T:z ...`
+- 目的：在保持 warn-only 策略下，先把“哪里不稳”观测清楚，为后续小步调参提供依据。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_warn_by_hex.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 warnByHex=A:0,O:0,T:0 probeHits=A:1,O:1,T:1`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=2 recent=2 warn_runs=0 warn_total=0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续累积 `spike_warn_history.csv`（目标 recent10），观察 `warnByHex` 是否出现偏态；若偏态持续再做定向小调。
+2. C2：若后续出现 `warn>0`，优先记录对应 hex 桶变化，再决定是调 `targetShare` 还是组合偏置参数。
