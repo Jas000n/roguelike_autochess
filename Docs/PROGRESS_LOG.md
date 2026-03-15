@@ -2348,3 +2348,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续滚动 3~5 轮，等待 recent10 完成“新探针样本”替换，验证 warn_runs 是否进一步回落。
 2. C2：若回落确认，再考虑把 soft-gate 说明从“观察告警”升级为“结构化告警+已修正”状态，准备进入 C3 深化。
+
+## 2026-03-15 10:49 EDT
+### Done
+- 按 C2 下一步继续滚动采样（post-fix replacement）：补跑 3 轮 batch，验证探针修正后的窗口替换效果。
+- 结果：3 轮 `炮火超频` 均未触发 warn（`warnByHex O:0`），并且关键占比显著高于 target（0.68/0.74/0.81）。
+- recent10 窗口继续回落：`warn_runs 4 -> 3`，short-window 保持全零。
+
+### Verify
+- 回归日志：
+  - `Builds/build_devloop_cycle_c2_postfix_roll_r1.log`
+  - `Builds/build_devloop_cycle_c2_postfix_roll_r2.log`
+  - `Builds/build_devloop_cycle_c2_postfix_roll_r3.log`
+- 关键行：
+  - `r1: [DEV][SPIKE_EFFECT] 炮火超频 ... share=0.74`
+  - `r2: [DEV][SPIKE_EFFECT] 炮火超频 ... share=0.68`
+  - `r3: [DEV][SPIKE_EFFECT] 炮火超频 ... share=0.81`
+  - 三轮均：`[DEV][SPIKE_SCENARIO] ... warn=0 warnByHex=A:0,O:0,T:0`
+  - 三轮均：`[DEV][BATCH] PASSED failCount=0`
+- 统计脚本：`python3 Docs/devloop/c2_warn_summary.py`
+  - `[recent10] warn_runs=3 warn_total=3 ... gap=2`
+  - `recent3 trend avg=0.00`
+  - `recent5 trend avg=0.00`
+
+### Next
+1. C2：再补 2~3 轮滚动样本，目标把 recent10 warn_runs 压到 ≤2（确认修正稳定）。
+2. C2：若持续回落，可将 artillery 定向调参标记为“验证通过”，准备转入 C3 持续打磨。
