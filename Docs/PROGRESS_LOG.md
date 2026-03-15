@@ -2186,3 +2186,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C2：继续累积到 recent10（当前 7），重点观察是否出现连续 3 次 `warn>0`。
 2. C2：若 O 桶继续主导且连续告警触发，再进行 `artillery_overclock` 小步调参并做 5 次回归。
+
+## 2026-03-15 07:49 EDT
+### Done
+- 继续 Stage C2（可观测探针）并提升判定可执行性：更新 `Docs/devloop/c2_warn_summary.py`，在阈值判断输出中加入“距离阈值差值（gap）”。
+- 新增输出细节：
+  - `recommendation` 增加 `gap`（距离 soft-gate: warn_runs>=5 还差多少）
+  - `tune_hint_window` 增加 `gap`（距离连续告警阈值: >=3 还差多少）
+- 目的：让观察阶段更直观，避免只看布尔结论而忽略接近程度。
+
+### Verify
+- 统计脚本（回归前后）：
+  - `python3 Docs/devloop/c2_warn_summary.py`
+  - 输出（本轮后）：
+    - `recommendation: keep warn-only ... gap=4`
+    - `tune_hint_window: keep observe ... gap=3`
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c2_threshold_gap.log`
+- 关键日志：
+  - `[DEV][SPIKE_SCENARIO] pass=18 fail=0 warn=0 warnByHex=A:0,O:0,T:0 ...`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=8 recent=8 warn_runs=1 warn_total=1 warn_by_hex_recent=A:0,O:1,T:0 soft_gate=0 tune_hint=0`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][BATCH] PASSED failCount=0`
+
+### Next
+1. C2：继续累积到 recent10（当前 8），关注 `gap` 收敛趋势与 O 桶占比是否扩大。
+2. C2：若连续告警 gap 明显收敛（接近 0）或 O 桶抬升，再执行 artillery_overclock 小步调参并做 5 次回归。

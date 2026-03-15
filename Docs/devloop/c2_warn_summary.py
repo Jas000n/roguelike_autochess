@@ -90,15 +90,20 @@ for _, w, *_ in reversed(recent):
     else:
         break
 
-if recent_warn_runs >= 5:
+soft_gate_threshold = 5
+consecutive_threshold = 3
+
+if recent_warn_runs >= soft_gate_threshold:
     print("recommendation: TRIGGER soft-gate (recent10 warn_runs >= 5)")
 else:
-    print("recommendation: keep warn-only (recent10 warn_runs < 5)")
+    gap = soft_gate_threshold - recent_warn_runs
+    print(f"recommendation: keep warn-only (recent10 warn_runs < 5, gap={gap})")
 
-if consecutive_warn_runs >= 3:
+if consecutive_warn_runs >= consecutive_threshold:
     print("tune_hint_window: TRIGGER (consecutive recent warns >= 3)")
 else:
-    print("tune_hint_window: keep observe (consecutive recent warns < 3)")
+    gap = consecutive_threshold - consecutive_warn_runs
+    print(f"tune_hint_window: keep observe (consecutive recent warns < 3, gap={gap})")
 
 bucket_totals = {
     "assassin_contract": recent_warn_a,
