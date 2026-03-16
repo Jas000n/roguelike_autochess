@@ -2888,3 +2888,31 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：维持 STABLE 监控，继续低风险体验打磨。
 2. 若 C2/C3 signal 任一退化，立即按对应分桶/窗口信号进行小步修正并复测。
+
+## 2026-03-15 22:01 EDT
+### Done
+- 继续 C3 稳定期的低风险工具化：新增 `Docs/devloop/heartbeat_snapshot.py`，聚合输出 C2/C3 单行状态信号。
+- 脚本行为：
+  - 调用 `c2_warn_summary.py` 与 `c3_mystery_reveal_summary.py`
+  - 仅提取并输出：
+    - `c2_heartbeat_signal: ...`
+    - `c3_heartbeat_signal: ...`
+- 目的：在 heartbeat 轮询中快速获取“可执行状态摘要”，减少解析长输出。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_heartbeat_snapshot.log`
+- 关键日志：
+  - `[DEV][SPIKE_WARN_WINDOW] samples=51 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][MYSTERY_BUCKET_SMOKE] pass=4 fail=0 ...`
+  - `[DEV][BATCH] PASSED failCount=0`
+- 快照脚本：
+  - `python3 Docs/devloop/heartbeat_snapshot.py`
+  - 输出：
+    - `c2_heartbeat_signal: warn_runs=0/10 warn_total=0`
+    - `c3_heartbeat_signal: status=STABLE early=16 late=16`
+
+### Next
+1. C3：保持 STABLE 监控，继续低风险优化与回归。
+2. 使用 heartbeat_snapshot 作为后续心跳快速状态入口。
