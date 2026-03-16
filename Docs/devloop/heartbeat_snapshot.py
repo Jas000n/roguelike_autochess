@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import subprocess
 import os
+from datetime import datetime
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
 
@@ -17,6 +18,9 @@ c3_lines = run(c3)
 
 c2_signal = next((l for l in c2_lines if l.startswith("c2_heartbeat_signal:")), "c2_heartbeat_signal: N/A")
 c3_signal = next((l for l in c3_lines if l.startswith("c3_heartbeat_signal:")), "c3_heartbeat_signal: N/A")
+c3_status = next((l for l in c3_lines if l.startswith("c3_mystery_status:")), "c3_mystery_status: N/A")
 
+print(f"heartbeat_snapshot_time: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print(c2_signal)
 print(c3_signal)
+print(c3_status)

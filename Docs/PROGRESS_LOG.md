@@ -2916,3 +2916,31 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：保持 STABLE 监控，继续低风险优化与回归。
 2. 使用 heartbeat_snapshot 作为后续心跳快速状态入口。
+
+## 2026-03-15 22:31 EDT
+### Done
+- 继续 C3 稳定期工具化：增强 `Docs/devloop/heartbeat_snapshot.py`，加入时间戳与 C3 详细状态行输出。
+- 改动：
+  - 新增 `heartbeat_snapshot_time`（本地时间）
+  - 在原有 `c2_heartbeat_signal / c3_heartbeat_signal` 之外，追加 `c3_mystery_status`
+- 目的：让 heartbeat 快照既有简要信号，也有稳定性理由（PASS/CONFIDENCE），便于夜间巡检快速判断。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_snapshot_timestamp.log`
+- 关键日志：
+  - `[DEV][SPIKE_WARN_WINDOW] samples=52 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][MYSTERY_BUCKET_SMOKE] pass=4 fail=0 ...`
+  - `[DEV][BATCH] PASSED failCount=0`
+- 快照脚本：
+  - `python3 Docs/devloop/heartbeat_snapshot.py`
+  - 输出示例：
+    - `heartbeat_snapshot_time: 2026-03-15 22:31:28`
+    - `c2_heartbeat_signal: warn_runs=0/10 warn_total=0`
+    - `c3_heartbeat_signal: status=STABLE early=17 late=17`
+    - `c3_mystery_status: STABLE (direction_checks=PASS/PASS, confidence=OK/OK)`
+
+### Next
+1. 继续保持 C2/C3 稳定巡检，若信号退化再触发定向修正。
+2. 在不引入高风险改动前提下，继续小步体验优化。
