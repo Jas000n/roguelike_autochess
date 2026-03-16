@@ -35,3 +35,4 @@ else:
     print("heartbeat_action: continue C3 low-risk iteration")
 
 print(f"heartbeat_summary: overall={overall} | {c2_signal.replace('c2_heartbeat_signal: ', '')} | {c3_signal.replace('c3_heartbeat_signal: ', '')}")
+print("heartbeat_next_step: run Unity batch regression before trusting snapshot")

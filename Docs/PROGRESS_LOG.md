@@ -3020,3 +3020,27 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. 继续使用 `heartbeat_summary` 作为夜间巡检主读数。
 2. 若 summary 显示 CHECK，再按 action 指引进入定向回归/修正。
+
+## 2026-03-16 00:31 EDT
+### Done
+- 继续 C3 稳态工具化：微调 `Docs/devloop/heartbeat_snapshot.py`，补充 `heartbeat_next_step` 提示。
+- 新增输出：
+  - `heartbeat_next_step: run Unity batch regression before trusting snapshot`
+- 目的：把快照使用前提写清楚，避免只跑脚本未跑回归时误判状态。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_snapshot_nextstep.log`
+- 关键日志：
+  - `[DEV][SPIKE_WARN_WINDOW] samples=56 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][MYSTERY_BUCKET_SMOKE] pass=4 fail=0 ...`
+  - `[DEV][BATCH] PASSED failCount=0`
+- 快照脚本输出：
+  - `heartbeat_overall: HEALTHY`
+  - `heartbeat_action: continue C3 low-risk iteration`
+  - `heartbeat_next_step: run Unity batch regression before trusting snapshot`
+
+### Next
+1. 持续维持 C3 稳态巡检与低风险打磨。
+2. 若整体信号退化为 CHECK，按 action 提示进入定向回归与修正。
