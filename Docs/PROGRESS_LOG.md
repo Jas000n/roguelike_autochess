@@ -2784,3 +2784,29 @@ Current Flow: Checked repository structure and DEV_LOOP.md. Identified Stage A1 
 ### Next
 1. C3：保持当前稳定态，继续小步信息优化并观察 status 是否持续 STABLE。
 2. 若后续出现 direction WARN 或 status 回落，再按分桶结果小步调权重并复测。
+
+## 2026-03-15 20:01 EDT
+### Done
+- 继续 Stage C3（低风险信息完善）：优化神秘节点揭示事件文案，增加阶段桶标签（前期/中期/后期）。
+- 代码改动（`RoguelikeFramework.Data.cs` / `RevealMysteryNode`）：
+  - 原事件：`神秘节点揭示：第X层 -> 类型`
+  - 新事件：`神秘节点揭示：第X层(前期|中期|后期) -> 类型`
+- 目的：让事件回看面板里的揭示结果与 C3 分桶统计口径直接对齐，便于玩家和开发者快速关联“楼层阶段 ↔ 揭示结果”。
+
+### Verify
+- 回归命令：
+  - `"/Applications/Unity/Hub/Editor/6000.3.10f1/Unity.app/Contents/MacOS/Unity" -batchmode -nographics -quit -projectPath /Users/jason/.openclaw/workspace/DragonChessLegends -executeMethod RoguelikeFramework.DevRunRegression3FloorsBatch -logFile /Users/jason/.openclaw/workspace/DragonChessLegends/Builds/build_devloop_cycle_c3_mystery_bucket_eventlabel.log`
+- 关键日志：
+  - `[DEV][MYSTERY_REVEAL] floor=3 ...`
+  - `[DEV][MYSTERY_REVEAL] floor=10 ...`
+  - `[DEV][MYSTERY_BUCKET_SMOKE] pass=4 fail=0 ...`
+  - `[DEV][EVENT_ROOM_SMOKE] pass=8 fail=0 mode=both`
+  - `[DEV][SPIKE_WARN_WINDOW] samples=47 recent=10 warn_runs=0 warn_total=0 ...`
+  - `[DEV][BATCH] PASSED failCount=0`
+- 统计脚本复核：
+  - `python3 Docs/devloop/c2_warn_summary.py` → recent10 持续 `0/10`
+  - `python3 Docs/devloop/c3_mystery_reveal_summary.py` → direction_check 继续 PASS，`c3_mystery_status: STABLE`。
+
+### Next
+1. C3：继续保持 STABLE 观测状态，做小步可读性优化，不引入高风险改动。
+2. 若后续方向检查出现 WARN，再按分桶结果小步调权重并复测。
