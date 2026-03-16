@@ -28,3 +28,8 @@ print(c3_status)
 # one-line overall for heartbeat automation
 overall = "HEALTHY" if ("warn_runs=0/10" in c2_signal and "status=STABLE" in c3_signal) else "CHECK"
 print(f"heartbeat_overall: {overall}")
+
+if overall == "CHECK":
+    print("heartbeat_action: inspect c2_heartbeat_signal / c3_heartbeat_signal and run targeted regression")
+else:
+    print("heartbeat_action: continue C3 low-risk iteration")
